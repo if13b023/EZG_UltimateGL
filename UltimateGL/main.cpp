@@ -52,28 +52,6 @@ int main()
 		exit(1);
 	}
 
-	// Load and create a texture 
-	GLuint texture1;
-	GLuint texture2;
-	// ====================
-	// Texture 1
-	// ====================
-	glGenTextures(1, &texture1);
-	glBindTexture(GL_TEXTURE_2D, texture1); // All upcoming GL_TEXTURE_2D operations now have effect on our texture object
-											// Set our texture parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// Set texture wrapping to GL_REPEAT
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// Set texture filtering
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	// Load, create texture and generate mipmaps
-	int width, height;
-	unsigned char* image = SOIL_load_image("concrete.jpg", &width, &height, 0, SOIL_LOAD_RGB);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	SOIL_free_image_data(image);
-	glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
-
 	//sample preps
 	/*GLfloat vertices[] = {
 	0.5f,  0.5f, 0.0f,  // Top Right
@@ -105,6 +83,27 @@ int main()
 			scene[i].indices[j] = shapes[i].mesh.indices[j].vertex_index;
 	}
 
+	// Load and create a texture 
+	GLuint texture1;
+	// ====================
+	// Texture 1
+	// ====================
+	glGenTextures(1, &texture1);
+	glBindTexture(GL_TEXTURE_2D, texture1); // All upcoming GL_TEXTURE_2D operations now have effect on our texture object
+											// Set our texture parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// Set texture wrapping to GL_REPEAT
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// Set texture filtering
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// Load, create texture and generate mipmaps
+	int width, height;
+	unsigned char* image = SOIL_load_image("concrete.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	SOIL_free_image_data(image);
+	glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
+
 	Shader* main_shader = engine.addShader("VertexShader.glsl", "FragmentShader.glsl");
 
 	GLuint VBO, VAO, EBO;
@@ -117,7 +116,7 @@ int main()
 	for (GLuint i = 0; i < scene.size(); i++)
 	{
 		//objects[i].VAO = VAO;
-		engine.addObject(attrib.vertices.data(), attrib.vertices.size(), scene[i].indices, scene[i].size, VBO, objects[i].VAO, EBO);
+		engine.addObject(attrib.vertices.data(), attrib.vertices.size(), scene[i].indices, scene[i].size, VBO, objects[i].VAO, objects[i].EBO);
 		objects[i].iCount = scene[i].size;
 		objects[i].scale = 1.0f;
 		objects[i].shader = main_shader;

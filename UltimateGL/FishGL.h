@@ -14,10 +14,21 @@
 
 #include "Shader.h"
 
-struct sceneobj {
+struct renderObj {
+	renderObj()
+		: VAO(0), textureID(0), iCount(0)
+	{};
 	GLuint VAO;
 	int iCount;
+	GLuint textureID;
+};
+
+struct sceneobj {
+	GLuint VAO;
+	GLuint EBO;
+	int iCount;
 	Shader* shader;
+	glm::vec3 color;
 	glm::vec3 position;
 	float scale;
 	float dist;

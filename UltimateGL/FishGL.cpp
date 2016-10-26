@@ -126,7 +126,8 @@ void FishGL::Run()
 			float iFl = i;
 			m_scene[i].shader->Use();
 			viewId = glGetUniformLocation(m_scene[i].shader->Program, "view");
-			glBindVertexArray(m_scene[i].VAO);
+			//glBindVertexArray(m_scene[i].VAO);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_scene[i].EBO);
 
 			glm::mat4 model;
 			model = glm::translate(model, m_scene[i].position);
@@ -145,7 +146,7 @@ void FishGL::Run()
 			glBindVertexArray(0);
 		}
 
-		if(m_drawAnimation)
+		if(m_drawAnimation && false)
 			drawAnimation(m_view);
 		//glDrawArrays(GL_TRIANGLES, 0, 3);
 		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -217,22 +218,29 @@ void FishGL::mouse_callback(double xpos, double ypos)
 void FishGL::addObject(GLfloat* vertices, int vSize, GLuint* indices, int iSize, GLuint& vbo, GLuint& vao, GLuint& ebo)
 {
 	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ebo);
 	glBindVertexArray(vao);
 
+	//VBO
+	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, vSize * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
 
+	// Position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (GLvoid*)0);
+	// Color attribute
+	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	//glEnableVertexAttribArray(1);
+
+	//EBO
+	glGenBuffers(1, &ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize * sizeof(GLuint), indices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
+	//CLEANUP
 	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	m_vao.push_back(vao);
 	m_vbo.push_back(vbo);
@@ -334,7 +342,8 @@ void FishGL::drawAnimation(glm::mat4& view)
 {
 	m_scene[0].shader->Use();
 	GLuint viewId = glGetUniformLocation(m_scene[0].shader->Program, "view");
-	glBindVertexArray(m_scene[0].VAO);
+	//glBindVertexArray(m_scene[0].VAO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_scene[0].EBO);
 
 	for (int i = 0; i < m_AnimResolution; ++i)
 	{
