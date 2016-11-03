@@ -41,8 +41,8 @@ int main()
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 
-	//ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "suzanne.obj");
-	ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "cube.obj");
+	//ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "suzanne_uv.obj");
+	ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "scene4.obj");
 
 	if (!err.empty()) { // `err` may contain warning message.
 		std::cout << err << std::endl;
@@ -50,37 +50,6 @@ int main()
 	}
 	if (!ret) {
 		exit(1);
-	}
-
-	//sample preps
-	/*GLfloat vertices[] = {
-	0.5f,  0.5f, 0.0f,  // Top Right
-	0.5f, -0.5f, 0.0f,  // Bottom Right
-	-0.5f, -0.5f, 0.0f,  // Bottom Left
-	-0.5f,  0.5f, 0.0f   // Top Left
-	};
-	GLuint indices[] = {  // Note that we start from 0!
-	0, 1, 3,   // First Triangle
-	1, 2, 3    // Second Triangle
-	};*/
-
-	//GLfloat* suzanne_vertices = new GLfloat[attrib.vertices.size()];
-	/*GLuint* suzanne_indices = new GLuint[shapes[0].mesh.indices.size()];
-	for (int i = 0; i < shapes[0].mesh.indices.size(); ++i)
-		suzanne_indices[i] = shapes[0].mesh.indices[i].vertex_index;*/
-	struct mesh
-	{
-		GLuint* indices;
-		rsize_t size;
-	};
-	std::vector<mesh> scene;
-	scene.resize(shapes.size());
-	for (int i = 0; i < shapes.size(); ++i)
-	{
-		scene[i].indices = new GLuint[shapes[i].mesh.indices.size()];
-		scene[i].size = shapes[i].mesh.indices.size();
-		for (int j = 0; j < shapes[i].mesh.indices.size(); ++j)
-			scene[i].indices[j] = shapes[i].mesh.indices[j].vertex_index;
 	}
 
 	// Load and create a texture 
@@ -104,28 +73,84 @@ int main()
 	SOIL_free_image_data(image);
 	glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
 
+
+	//sample preps
+	/*GLfloat vertices[] = {
+	0.5f,  0.5f, 0.0f,  // Top Right
+	0.5f, -0.5f, 0.0f,  // Bottom Right
+	-0.5f, -0.5f, 0.0f,  // Bottom Left
+	-0.5f,  0.5f, 0.0f   // Top Left
+	};
+	GLuint indices[] = {  // Note that we start from 0!
+	0, 1, 3,   // First Triangle
+	1, 2, 3    // Second Triangle
+	};*/
+
+	//GLfloat* suzanne_vertices = new GLfloat[attrib.vertices.size()];
+	/*GLuint* suzanne_indices = new GLuint[shapes[0].mesh.indices.size()];
+	for (int i = 0; i < shapes[0].mesh.indices.size(); ++i)
+		suzanne_indices[i] = shapes[0].mesh.indices[i].vertex_index;*/
+	struct mesh
+	{
+		std::string name;
+		std::vector<GLfloat> data;
+	};
+
+	std::vector<mesh> objects;
+	objects.resize(shapes.size());
+	int dataSize = 8;
+	for (int i = 0; i < shapes.size(); ++i)
+	{
+		objects[i].name = shapes[i].name;
+		objects[i].data.resize(shapes[i].mesh.indices.size()*dataSize);
+		for (int j = 0; j < shapes[i].mesh.indices.size()*dataSize; j += dataSize)
+		{
+			tinyobj::index_t index = shapes[i].mesh.indices[j/dataSize];
+
+			//Positions
+			objects[i].data[j+0] = attrib.vertices[3 * index.vertex_index + 0];
+			objects[i].data[j+1] = attrib.vertices[3 * index.vertex_index + 1];
+			objects[i].data[j+2] = attrib.vertices[3 * index.vertex_index + 2];
+			//Normals
+			objects[i].data[j+3] = attrib.normals[3 * index.normal_index + 0];
+			objects[i].data[j+4] = attrib.normals[3 * index.normal_index + 1];
+			objects[i].data[j+5] = attrib.normals[3 * index.normal_index + 2];
+			//Texture
+			if (index.texcoord_index != -1)
+			{
+				objects[i].data[j + 6] = attrib.texcoords[2 * index.texcoord_index + 0];
+				objects[i].data[j + 7] = attrib.texcoords[2 * index.texcoord_index + 1];
+			}
+			else
+			{
+				objects[i].data[j + 6] = 0.0f;
+				objects[i].data[j + 7] = 0.0f;
+			}
+
+			//std::cout << objects[i].data[j + 0] << "|" << objects[i].data[j + 1] << "|" << objects[i].data[j + 2] << std::endl;
+		}
+	}
+
 	Shader* main_shader = engine.addShader("VertexShader.glsl", "FragmentShader.glsl");
 
-	GLuint VBO, VAO, EBO;
-
-	GLint fragmentColorLocation = glGetUniformLocation(main_shader->Program, "uniformColor");
-
 	short dist = 5;
-	std::vector<sceneobj> objects;
-	objects.resize(scene.size());
-	for (GLuint i = 0; i < scene.size(); i++)
+	std::vector<sceneobj> scene;
+	scene.resize(objects.size());
+	for (GLuint i = 0; i < objects.size(); i++)
 	{
-		//objects[i].VAO = VAO;
-		engine.addObject(attrib.vertices.data(), attrib.vertices.size(), scene[i].indices, scene[i].size, VBO, objects[i].VAO, objects[i].EBO);
-		objects[i].iCount = scene[i].size;
-		objects[i].scale = 1.0f;
-		objects[i].shader = main_shader;
-		//objects[i].position = glm::vec3((rand() % dist) - dist / 2, (rand() % dist) - dist / 2, (rand() % dist) - dist / 2);
-		objects[i].position = glm::vec3(0,-2.0f,0);
+		//scene[i].VAO = VAO;
+		//engine.addObject(attrib.vertices.data(), attrib.vertices.size(), objects[i].indices, objects[i].size, VBO, scene[i].VAO, scene[i].EBO);
+		engine.addObjectWithNormals(objects[i].data, scene[i].VAO);
+		scene[i].iCount = objects[i].data.size() / 8;
+		scene[i].scale = 1.0f;
+		scene[i].shader = main_shader;
+		//scene[i].position = glm::vec3((rand() % dist) - dist / 2, (rand() % dist) - dist / 2, (rand() % dist) - dist / 2);
+		scene[i].position = glm::vec3(0,-2.0f,0);
+		scene[i].texture = texture1;
 	}
 	//*****
 
-	engine.addObjectsToScene(objects.data(), scene.size());
+	engine.addObjectsToScene(scene.data(), objects.size());
 
 	//Animation
 	animation anim;
@@ -173,9 +198,9 @@ int main()
 	engine.Run();
 	
 	// Properly de-allocate all resources once they've outlived their purpose
-	glDeleteVertexArrays(1, &VAO);
+	/*glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
+	glDeleteBuffers(1, &EBO);*/
 
 	glfwTerminate();
 	

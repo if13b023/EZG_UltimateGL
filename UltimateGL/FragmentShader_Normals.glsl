@@ -1,10 +1,10 @@
 #version 330 core
 
+out vec4 color;
+
 in vec3 FragPos;
 in vec3 Normal;
 in vec2 uvCoords;
-
-out vec4 color;
 
 uniform vec4 objColor;
 uniform vec3 lightPos;
@@ -30,7 +30,8 @@ void main()
     vec3 reflectDir = reflect(-lightDir, norm);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * spec * lightColor;  
-
-    vec3 result = (ambient + diffuse + specular);
-    color = vec4(result, 1.0f) *  texture(mainTexture, uvCoords);
+	
+	vec3 normalCol = vec3(0.5f, 0.5f, 0.5f) + (Normal * 0.5f);
+    vec3 result = (ambient + diffuse + specular) * normalCol;
+    color = vec4(result, 1.0f);
 }

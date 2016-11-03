@@ -6,13 +6,15 @@ FishGL::FishGL()
 	anim_count(0),
 	m_drawAnimation(true),
 	m_animationPoints(nullptr),
-	m_AnimResolution(50)
+	m_AnimResolution(50),
+	m_lightCam(false)
 {
 	glfwInit();
 	m_shaders.reserve(16);
 	m_vao.reserve(16);
 	m_vbo.reserve(16);
-	camera.rotation = glm::quat(glm::vec3(0, glm::radians(0.0f), 0));
+	m_camera.rotation = glm::quat(glm::vec3(0, glm::radians(0.0f), 0));
+	m_light.position = glm::vec3(0.f, 5.0f, 0.f);
 }
 
 
@@ -79,37 +81,38 @@ void FishGL::Run()
 
 			if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
 			{
-				camera.position += forwardVec * camera.rotation;
+				m_camera.position -= forwardVec * m_camera.rotation;
 			}
 			else if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS)
 			{
-				camera.position -= forwardVec * camera.rotation;
+				m_camera.position += forwardVec * m_camera.rotation;
 			}
 
 			if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
-				camera.position += sideVec * camera.rotation;
+				m_camera.position -= sideVec * m_camera.rotation;
 			else if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
-				camera.position -= sideVec * camera.rotation;
+				m_camera.position += sideVec * m_camera.rotation;
 
 			glm::mat4 translate = glm::mat4(1.0f);
-			//translate = glm::translate(m_view, camera.position);
-			//translate = glm::translate(m_view, -glm::vec3(0,0,-1.0f));
-			m_view = glm::translate(m_view, camera.position);
-			m_view = glm::mat4_cast(camera.rotation) * m_view;
+			m_view = glm::translate(m_view, -m_camera.position);
+			m_view = glm::mat4_cast(m_camera.rotation) * m_view;
 		}
 		else {
 			glm::vec3 pos;
 			glm::quat rot;
 
 			runAnimation(pos, rot);
-			camera.position = pos;
-			camera.rotation = rot;
-			//m_view = glm::translate(m_view, camera.position);
-			//m_view = glm::mat4_cast(camera.rotation) * m_view;
-			m_view = glm::toMat4(camera.rotation) * glm::translate(m_view, camera.position);
+			m_camera.position = -pos;
+			m_camera.rotation = rot;
+			//m_view = glm::translate(m_view, m_camera.position);
+			//m_view = glm::mat4_cast(m_camera.rotation) * m_view;
+			m_view = glm::toMat4(m_camera.rotation) * glm::translate(m_view, -m_camera.position);
 		}
 		//keyboard events
 		glfwPollEvents();
+
+		if (m_lightCam)
+			m_light.position = m_camera.position;
 
 		//render stuff
 		glEnable(GL_DEPTH_TEST);
@@ -121,13 +124,26 @@ void FishGL::Run()
 		//main_shader->Use();
 		//glBindVertexArray(VAO);
 
-		for (GLuint i = 1; i < m_scene.size(); i++)
+		for (GLuint i = 0; i < m_scene.size(); i++)
 		{
 			float iFl = i;
 			m_scene[i].shader->Use();
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, m_scene[i].texture);
+			glUniform1i(glGetUniformLocation(m_scene[i].shader->Program, "mainTexture"), 0);
+
 			viewId = glGetUniformLocation(m_scene[i].shader->Program, "view");
-			//glBindVertexArray(m_scene[i].VAO);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_scene[i].EBO);
+			GLint objectColorLoc = glGetUniformLocation(m_scene[i].shader->Program, "objectColor");
+			GLint lightColorLoc = glGetUniformLocation(m_scene[i].shader->Program, "lightColor");
+			GLint lightPosLoc = glGetUniformLocation(m_scene[i].shader->Program, "lightPos");
+			GLint viewPosLoc = glGetUniformLocation(m_scene[i].shader->Program, "viewPos");
+			glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);
+			glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
+			glUniform3f(lightPosLoc, m_light.position.x, m_light.position.y, m_light.position.z);
+			glUniform3f(viewPosLoc, m_camera.position.x, m_camera.position.y, m_camera.position.z);
+
+			glBindVertexArray(m_scene[i].VAO);
 
 			glm::mat4 model;
 			model = glm::translate(model, m_scene[i].position);
@@ -140,8 +156,8 @@ void FishGL::Run()
 			//glUniform4f(m_scene[i].shader->fragmentColorId, (m_scene[i].position.r + 5) / 10, (m_scene[i].position.g + 5) / 10, (m_scene[i].position.b + 5) / 10, 1.0f);
 			glUniform4f(m_scene[i].shader->fragmentColorId, iFl / m_scene.size(), iFl / m_scene.size(), iFl / m_scene.size(), 1.0f);
 			
-			//glDrawArrays(GL_TRIANGLES, 0, 128);
-			glDrawElements(GL_TRIANGLES, m_scene[i].iCount, GL_UNSIGNED_INT, 0);
+			glDrawArrays(GL_TRIANGLES, 0, m_scene[i].iCount);
+			//glDrawElements(GL_TRIANGLES, m_scene[i].iCount, GL_UNSIGNED_INT, 0);
 
 			glBindVertexArray(0);
 		}
@@ -177,10 +193,10 @@ void FishGL::key_callback(int key, int action)
 				std::cout << m_freemode << std::endl;
 				break;
 			case GLFW_KEY_R:
-				std::cout << "frame[" << anim_count << "].position = glm::vec3(" << camera.position.x << "f, " << camera.position.y << "f, " << camera.position.z << "f);" << std::endl;
-				std::cout << "frame[" << anim_count << "].rotation = glm::quat(" << camera.rotation.w << "f, " << camera.rotation.x << "f, " << camera.rotation.y << "f, " << camera.rotation.z << "f);" << std::endl;
-				m_animation->frames[anim_count].position = camera.position;
-				m_animation->frames[anim_count].rotation = glm::normalize(camera.rotation);
+				std::cout << "frame[" << anim_count << "].position = glm::vec3(" << m_camera.position.x << "f, " << m_camera.position.y << "f, " << m_camera.position.z << "f);" << std::endl;
+				std::cout << "frame[" << anim_count << "].rotation = glm::quat(" << m_camera.rotation.w << "f, " << m_camera.rotation.x << "f, " << m_camera.rotation.y << "f, " << m_camera.rotation.z << "f);" << std::endl;
+				m_animation->frames[anim_count].position = m_camera.position;
+				m_animation->frames[anim_count].rotation = glm::normalize(m_camera.rotation);
 				anim_count++;
 				if (anim_count == 10)
 					anim_count = 0;
@@ -189,11 +205,14 @@ void FishGL::key_callback(int key, int action)
 
 				break;
 			case GLFW_KEY_I:
-				std::cout << camera.position.x << "|" << camera.position.y << "|" << camera.position.z << "|" << std::endl;
-				std::cout << camera.rotation.x << "|" << camera.rotation.y << "|" << camera.rotation.z << "|" << camera.rotation.w << "|" << std::endl;
+				std::cout << m_camera.position.x << "|" << m_camera.position.y << "|" << m_camera.position.z << "|" << std::endl;
+				std::cout << m_camera.rotation.x << "|" << m_camera.rotation.y << "|" << m_camera.rotation.z << "|" << m_camera.rotation.w << "|" << std::endl;
 				break;
 			case GLFW_KEY_N:
 				m_drawAnimation = !m_drawAnimation;
+				break;
+			case GLFW_KEY_L:
+				m_lightCam = !m_lightCam;
 				break;
 		}
 	}
@@ -205,14 +224,47 @@ void FishGL::mouse_callback(double xpos, double ypos)
 	//GLfloat diff_xpos = xpos - mouse.x;
 	//GLfloat diff_ypos = mouse.y - ypos;
 	glm::vec2 diff = glm::vec2(xpos, ypos) - mouse;
-	//camera.rotation = glm::normalize(glm::quat(glm::vec3(glm::radians(diff.y * dt * sens), glm::radians(diff.x * dt * sens), 0.0f)) * camera.rotation);
-	//camera.rotation = glm::normalize(glm::quat(glm::vec3(diff.y * dt * sens, diff.x * dt * sens, 0.0f)) * camera.rotation);
+	//m_camera.rotation = glm::normalize(glm::quat(glm::vec3(glm::radians(diff.y * dt * sens), glm::radians(diff.x * dt * sens), 0.0f)) * m_camera.rotation);
+	//m_camera.rotation = glm::normalize(glm::quat(glm::vec3(diff.y * dt * sens, diff.x * dt * sens, 0.0f)) * m_camera.rotation);
 	glm::quat yaw = glm::quat(glm::vec3(diff.y * dt * sens, 0.0f, 0.0f));
 	glm::quat pitch = glm::quat(glm::vec3(0.0f, diff.x * dt * sens, 0.0f));
-	camera.rotation = glm::normalize(yaw * camera.rotation * pitch);
-	//std::cout << camera.rotation.z << std::endl;
+	m_camera.rotation = glm::normalize(yaw * m_camera.rotation * pitch);
+	//std::cout << m_camera.rotation.z << std::endl;
 	mouse.x = xpos;
 	mouse.y = ypos;
+}
+
+void FishGL::addObject(GLfloat * vertices, int vSize, GLuint & vao)
+{
+	GLuint vbo;
+
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	//VBO
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, vSize * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+
+	// Position attribute
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (GLvoid*)0);
+	// Color attribute
+	//glEnableVertexAttribArray(1);
+	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+
+	//EBO
+	//glGenBuffers(1, &ebo);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize * sizeof(GLuint), indices, GL_STATIC_DRAW);
+
+	//CLEANUP
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	m_vao.push_back(vao);
+	m_vbo.push_back(vbo);
 }
 
 void FishGL::addObject(GLfloat* vertices, int vSize, GLuint* indices, int iSize, GLuint& vbo, GLuint& vao, GLuint& ebo)
@@ -224,13 +276,13 @@ void FishGL::addObject(GLfloat* vertices, int vSize, GLuint* indices, int iSize,
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, vSize * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
 
 	// Position attribute
+	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (GLvoid*)0);
 	// Color attribute
-	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	//glEnableVertexAttribArray(1);
+	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 
 	//EBO
 	glGenBuffers(1, &ebo);
@@ -244,6 +296,35 @@ void FishGL::addObject(GLfloat* vertices, int vSize, GLuint* indices, int iSize,
 
 	m_vao.push_back(vao);
 	m_vbo.push_back(vbo);
+}
+
+void FishGL::addObjectWithNormals(std::vector<GLfloat>& data, GLuint & vao)
+{
+	GLuint vbo;
+
+	glGenVertexArrays(1, &vao);
+	
+	glBindVertexArray(vao);
+
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), &data[0], GL_STATIC_DRAW);
+
+	glBindVertexArray(vao);
+	//Positions
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	//Normals
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+	////UVs
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
+
+	// reset bindings for VAO and VBO
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 Shader * FishGL::addShader(const char * vertex, const char * fragment)
@@ -342,8 +423,7 @@ void FishGL::drawAnimation(glm::mat4& view)
 {
 	m_scene[0].shader->Use();
 	GLuint viewId = glGetUniformLocation(m_scene[0].shader->Program, "view");
-	//glBindVertexArray(m_scene[0].VAO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_scene[0].EBO);
+	glBindVertexArray(m_scene[0].VAO);
 
 	for (int i = 0; i < m_AnimResolution; ++i)
 	{
@@ -371,7 +451,8 @@ void FishGL::drawAnimation(glm::mat4& view)
 		//glUniform4f(m_scene[0].shader->fragmentColorId, 1.0f, 0, 0, 1.0f);
 		glUniform4f(m_scene[0].shader->fragmentColorId, m_animation->frames[i].rotation.x, m_animation->frames[i].rotation.y, m_animation->frames[i].rotation.z, 1.0f);
 
-		glDrawElements(GL_TRIANGLES, m_scene[0].iCount, GL_UNSIGNED_INT, 0);
+		glDrawArrays(GL_TRIANGLES, 0, m_scene[i].iCount);
+		//glDrawElements(GL_TRIANGLES, m_scene[0].iCount, GL_UNSIGNED_INT, 0);
 	}
 
 	glBindVertexArray(0);
