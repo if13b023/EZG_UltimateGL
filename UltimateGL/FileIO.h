@@ -7,5 +7,5 @@ class FileReader
 {
 public:
 	std::string ReadText(const char* path);
-	int ReadText(const char* path, char** output);
+	size_t ReadText(const char* path, char** output);
 };

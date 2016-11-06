@@ -46,10 +46,9 @@ GLFWwindow * FishGL::createWindow(int width, int height)
 		exit(1);
 	}
 
-	int tmp_width, tmp_height;
-	glfwGetFramebufferSize(m_window, &tmp_width, &tmp_height);
+	glfwGetFramebufferSize(m_window, &m_size.x, &m_size.y);
 
-	glViewport(0, 0, tmp_width, tmp_height);
+	glViewport(0, 0, m_size.x, m_size.y);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -63,11 +62,14 @@ void FishGL::Run()
 	double lastframe = glfwGetTime();
 	dt = 0.014;
 
+	//init shadows
+	i_initShadow();
+	m_depthshader = addShader("VertexShader.glsl", "FragmentShader_Depth.glsl");
+
 	while (!glfwWindowShouldClose(m_window))
 	{
-		GLint viewId;
+		glEnable(GL_DEPTH_TEST);
 		glm::mat4 m_view;
-		//glUniformMatrix4fv(viewId, 1, GL_FALSE, glm::value_ptr(m_view));
 
 		dt = glfwGetTime() - lastframe;
 		lastframe = glfwGetTime();
@@ -114,58 +116,22 @@ void FishGL::Run()
 		if (m_lightCam)
 			m_light.position = m_camera.position;
 
-		//render stuff
-		glEnable(GL_DEPTH_TEST);
+		//shadow stuff
+		glViewport(0, 0, m_shadow.size, m_shadow.size);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_shadow.depthFBO);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		i_renderScene(m_view, true);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		//color render
+		glViewport(0, 0, m_size.x, m_size.y); //reset viewport
 		//glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 		glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		//moving
-		//main_shader->Use();
-		//glBindVertexArray(VAO);
-
-		for (GLuint i = 0; i < m_scene.size(); i++)
-		{
-			float iFl = i;
-			m_scene[i].shader->Use();
-
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, m_scene[i].texture);
-			glUniform1i(glGetUniformLocation(m_scene[i].shader->Program, "mainTexture"), 0);
-
-			viewId = glGetUniformLocation(m_scene[i].shader->Program, "view");
-			GLint objectColorLoc = glGetUniformLocation(m_scene[i].shader->Program, "objectColor");
-			GLint lightColorLoc = glGetUniformLocation(m_scene[i].shader->Program, "lightColor");
-			GLint lightPosLoc = glGetUniformLocation(m_scene[i].shader->Program, "lightPos");
-			GLint viewPosLoc = glGetUniformLocation(m_scene[i].shader->Program, "viewPos");
-			glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);
-			glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
-			glUniform3f(lightPosLoc, m_light.position.x, m_light.position.y, m_light.position.z);
-			glUniform3f(viewPosLoc, m_camera.position.x, m_camera.position.y, m_camera.position.z);
-
-			glBindVertexArray(m_scene[i].VAO);
-
-			glm::mat4 model;
-			model = glm::translate(model, m_scene[i].position);
-			model = glm::scale(model, glm::vec3(m_scene[i].scale, m_scene[i].scale, m_scene[i].scale));
-			//GLfloat angle = 20.0f * i + static_cast<float>(glfwGetTime());
-			//model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
-
-			glUniformMatrix4fv(m_scene[i].shader->transId, 1, GL_FALSE, glm::value_ptr(model));
-			glUniformMatrix4fv(viewId, 1, GL_FALSE, glm::value_ptr(m_view));
-			//glUniform4f(m_scene[i].shader->fragmentColorId, (m_scene[i].position.r + 5) / 10, (m_scene[i].position.g + 5) / 10, (m_scene[i].position.b + 5) / 10, 1.0f);
-			glUniform4f(m_scene[i].shader->fragmentColorId, iFl / m_scene.size(), iFl / m_scene.size(), iFl / m_scene.size(), 1.0f);
-			
-			glDrawArrays(GL_TRIANGLES, 0, m_scene[i].iCount);
-			//glDrawElements(GL_TRIANGLES, m_scene[i].iCount, GL_UNSIGNED_INT, 0);
-
-			glBindVertexArray(0);
-		}
-
-		if(m_drawAnimation && false)
-			drawAnimation(m_view);
-		//glDrawArrays(GL_TRIANGLES, 0, 3);
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		i_renderScene(m_view);
+		
+		//if(m_drawAnimation && false)
+		//	drawAnimation(m_view);
 
 		//swap buffers
 		glfwSwapBuffers(m_window);
@@ -353,7 +319,7 @@ void FishGL::addObjectToScene(sceneobj & obj)
 	m_scene.push_back(obj);
 }
 
-void FishGL::addObjectsToScene(sceneobj* obj, int size)
+void FishGL::addObjectsToScene(sceneobj* obj, size_t size)
 {
 	for(int i = 0; i < size; ++i)
 		m_scene.push_back(obj[i]);
@@ -496,4 +462,98 @@ glm::vec3* FishGL::getAnimation(int resolution)
 	}
 
 	return points;
+}
+
+void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
+{
+	//render stuff
+	//moving
+	//main_shader->Use();
+	//glBindVertexArray(VAO);
+
+	for (GLuint i = 0; i < m_scene.size(); i++)
+	{
+		Shader* shader;
+		if (isShadow || true)
+			shader = m_shadow.shader;
+		else
+			shader = m_scene[i].shader;
+
+		//DEBUG
+		if (i == -1)
+			shader = m_depthshader;
+
+		shader->Use();
+
+		if (!isShadow/* && false*/)
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, m_scene[i].texture);
+			glUniform1i(glGetUniformLocation(shader->Program, "mainTexture"), 0);
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, m_shadow.depthTex);
+			glUniform1i(glGetUniformLocation(shader->Program, "depthMap"), 1);
+
+			GLint objectColorLoc = glGetUniformLocation(shader->Program, "objColor");
+			GLint lightColorLoc = glGetUniformLocation(shader->Program, "lightColor");
+			GLint lightPosLoc = glGetUniformLocation(shader->Program, "lightPos");
+			GLint viewPosLoc = glGetUniformLocation(m_scene[i].shader->Program, "viewPos");
+			GLint viewLoc = glGetUniformLocation(m_scene[i].shader->Program, "view");
+			glUniform3f(objectColorLoc, 0.0f, 1.f, 0.f);
+			glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
+			glUniform3f(lightPosLoc, m_light.position.x, m_light.position.y, m_light.position.z);
+			glUniform3f(viewPosLoc, m_camera.position.x, m_camera.position.y, m_camera.position.z);
+			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(m_view));
+		}
+
+		GLfloat near_plane = 1.0f, far_plane = 9.5f;
+		glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+		glm::mat4 lightView =glm::lookAt(	m_light.position,
+											glm::vec3(0.0f),
+											glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 lightMatrix = lightProjection * lightView;
+		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "lightMatrix"), 1, GL_FALSE, glm::value_ptr(lightMatrix));
+
+		glBindVertexArray(m_scene[i].VAO);
+
+		glm::mat4 model;
+		model = glm::translate(model, m_scene[i].position);
+		model = glm::scale(model, glm::vec3(m_scene[i].scale, m_scene[i].scale, m_scene[i].scale));
+		//GLfloat angle = 20.0f * i + static_cast<float>(glfwGetTime());
+		//model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
+
+		glUniformMatrix4fv(m_scene[i].shader->transId, 1, GL_FALSE, glm::value_ptr(model));
+		//glUniform4f(m_scene[i].shader->fragmentColorId, iFl / m_scene.size(), iFl / m_scene.size(), iFl / m_scene.size(), 1.0f);
+
+		glDrawArrays(GL_TRIANGLES, 0, m_scene[i].iCount);
+
+		glBindVertexArray(0);
+	}
+}
+
+void FishGL::i_initShadow()
+{
+	glGenFramebuffers(1, &m_shadow.depthFBO);
+
+	m_shadow.size = 1024;
+
+	glGenTextures(1, &m_shadow.depthTex);
+	glBindTexture(GL_TEXTURE_2D, m_shadow.depthTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_shadow.size, m_shadow.size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, m_shadow.depthFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_shadow.depthTex, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	m_shadow.shader = addShader("VertexShader_Shadow.glsl", "FragmentShader_Shadow.glsl");
+	
+	//m_shadow.shader->Use();
+	//glUniformMatrix4fv(m_shadow.shader->projId, 1, GL_FALSE, glm::value_ptr(m_projection));
 }

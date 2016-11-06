@@ -15,7 +15,7 @@ std::string FileReader::ReadText(const char* path)
 	return content;
 }
 
-int FileReader::ReadText(const char * path, char ** output)
+size_t FileReader::ReadText(const char * path, char ** output)
 {
 	std::string tmp = ReadText(path);
 

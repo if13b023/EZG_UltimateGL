@@ -13,19 +13,20 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include "Shader.h"
+#include "SOIL.h"
 
-struct renderObj {
-	renderObj()
-		: VAO(0), textureID(0), iCount(0)
-	{};
-	GLuint VAO;
-	int iCount;
-	GLuint textureID;
-};
+//struct renderObj {
+//	renderObj()
+//		: VAO(0), textureID(0), iCount(0)
+//	{};
+//	GLuint VAO;
+//	int iCount;
+//	GLuint textureID;
+//};
 
 struct sceneobj {
 	GLuint VAO;
-	int iCount;
+	GLsizei iCount;
 	Shader* shader;
 	glm::vec3 color;
 	glm::vec3 position;
@@ -60,6 +61,13 @@ struct light {
 	glm::vec3 color;
 };
 
+struct shadow {
+	GLuint size;
+	GLuint depthFBO;
+	GLuint depthTex;
+	Shader* shader;
+};
+
 class FishGL
 {
 public:
@@ -76,13 +84,14 @@ public:
 	void setPerspective(float fovy, float aspect, float near, float far);
 	glm::mat4 getPerspective();
 	void addObjectToScene(sceneobj& obj);
-	void addObjectsToScene(sceneobj* obj, int size);
+	void addObjectsToScene(sceneobj* obj, size_t size);
 	void addAnimation(animation* anim);
 	void runAnimation(glm::vec3& pos, glm::quat& rot);
 	void drawAnimation(glm::mat4& view);
 	glm::vec3* getAnimation(int resolution);
 private:
 	GLFWwindow* m_window;
+	glm::ivec2 m_size;
 	std::vector<GLuint> m_vbo, m_vao;
 	std::vector<Shader> m_shaders;
 	std::vector<sceneobj> m_scene;
@@ -99,4 +108,11 @@ private:
 	int anim_count;
 	glm::vec3* m_animationPoints;
 	int m_AnimResolution;
+	shadow m_shadow;
+
+	//DEBUG
+	Shader* m_depthshader;
+
+	void i_renderScene(glm::mat4& view, bool isShadow = false);
+	void i_initShadow();
 };
