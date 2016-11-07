@@ -474,7 +474,7 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 	for (GLuint i = 0; i < m_scene.size(); i++)
 	{
 		Shader* shader;
-		if (isShadow || true)
+		if (isShadow)
 			shader = m_shadow.shader;
 		else
 			shader = m_scene[i].shader;
@@ -495,21 +495,16 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 			glBindTexture(GL_TEXTURE_2D, m_shadow.depthTex);
 			glUniform1i(glGetUniformLocation(shader->Program, "depthMap"), 1);
 
-			GLint objectColorLoc = glGetUniformLocation(shader->Program, "objColor");
-			GLint lightColorLoc = glGetUniformLocation(shader->Program, "lightColor");
-			GLint lightPosLoc = glGetUniformLocation(shader->Program, "lightPos");
-			GLint viewPosLoc = glGetUniformLocation(m_scene[i].shader->Program, "viewPos");
-			GLint viewLoc = glGetUniformLocation(m_scene[i].shader->Program, "view");
-			glUniform3f(objectColorLoc, 0.0f, 1.f, 0.f);
-			glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
-			glUniform3f(lightPosLoc, m_light.position.x, m_light.position.y, m_light.position.z);
-			glUniform3f(viewPosLoc, m_camera.position.x, m_camera.position.y, m_camera.position.z);
-			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(m_view));
+			glUniform3f(glGetUniformLocation(shader->Program, "objColor"), 0.0f, 1.f, 0.f);
+			glUniform3f(glGetUniformLocation(shader->Program, "lightColor"), 1.0f, 1.0f, 1.0f);
+			glUniform3fv(glGetUniformLocation(shader->Program, "lightPos"), 1, &m_light.position[0]);
+			glUniform3fv(glGetUniformLocation(m_scene[i].shader->Program, "viewPos"), 1, &m_camera.position[0]);
+			glUniformMatrix4fv(glGetUniformLocation(m_scene[i].shader->Program, "view"), 1, GL_FALSE, glm::value_ptr(m_view));
 		}
 
-		GLfloat near_plane = 1.0f, far_plane = 9.5f;
+		GLfloat near_plane = 1.0f, far_plane = 19.5f;
 		glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-		glm::mat4 lightView =glm::lookAt(	m_light.position,
+		glm::mat4 lightView =glm::lookAt(	glm::vec3(m_light.position.x,10.0f, m_light.position.z),
 											glm::vec3(0.0f),
 											glm::vec3(0.0f, 1.0f, 0.0f));
 		glm::mat4 lightMatrix = lightProjection * lightView;
@@ -517,13 +512,13 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 
 		glBindVertexArray(m_scene[i].VAO);
 
-		glm::mat4 model;
-		model = glm::translate(model, m_scene[i].position);
-		model = glm::scale(model, glm::vec3(m_scene[i].scale, m_scene[i].scale, m_scene[i].scale));
+		glm::mat4 transform;
+		transform = glm::translate(transform, m_scene[i].position);
+		transform = glm::scale(transform, glm::vec3(m_scene[i].scale));
 		//GLfloat angle = 20.0f * i + static_cast<float>(glfwGetTime());
 		//model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
 
-		glUniformMatrix4fv(m_scene[i].shader->transId, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(shader->transId, 1, GL_FALSE, glm::value_ptr(transform));
 		//glUniform4f(m_scene[i].shader->fragmentColorId, iFl / m_scene.size(), iFl / m_scene.size(), iFl / m_scene.size(), 1.0f);
 
 		glDrawArrays(GL_TRIANGLES, 0, m_scene[i].iCount);

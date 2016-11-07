@@ -74,8 +74,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\glm-0.9.8.1\glm;..\..\glfw-3.2.1.bin.WIN64\include;..\..\glew-2.0.0\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\glew-2.0.0\lib\Release\x64;..\..\glfw-3.2.1.bin.WIN64\lib-vc2015;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\glm-0.9.8.1\glm;G:\FH\Master\EZG\glfw-3.2.1\include;G:\FH\Master\EZG\glew-2.0.0-build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>G:\FH\Master\EZG\glew-2.0.0-build\lib\Debug;G:\FH\Master\EZG\glfw-3.2.1\bin\src\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -109,7 +109,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32s.lib;SOIL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;libglew32d.lib;SOIL.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

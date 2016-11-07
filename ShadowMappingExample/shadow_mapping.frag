@@ -1,5 +1,3 @@
-
-
 #version 330 core
 out vec4 FragColor;
 
@@ -72,8 +70,8 @@ void main()
     spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
     vec3 specular = spec * lightColor;    
     // Calculate shadow
-    float shadow = shadows ? ShadowCalculation(fs_in.FragPosLightSpace) : 0.0;                      
-    shadow = min(shadow, 0.75); // reduce shadow strength a little: allow some diffuse/specular light in shadowed regions
+    float shadow = ShadowCalculation(fs_in.FragPosLightSpace);                      
+    //shadow = min(shadow, 0.75); // reduce shadow strength a little: allow some diffuse/specular light in shadowed regions
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;    
     
     FragColor = vec4(lighting, 1.0f);

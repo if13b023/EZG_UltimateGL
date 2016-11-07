@@ -142,7 +142,7 @@ int main()
 		//engine.addObject(attrib.vertices.data(), attrib.vertices.size(), objects[i].indices, objects[i].size, VBO, scene[i].VAO, scene[i].EBO);
 		engine.addObjectWithNormals(objects[i].data, scene[i].VAO);
 		scene[i].iCount = objects[i].data.size() / 8;
-		scene[i].scale = 1.0f;
+		scene[i].scale = 0.5f;
 		scene[i].shader = main_shader;
 		//scene[i].position = glm::vec3((rand() % dist) - dist / 2, (rand() % dist) - dist / 2, (rand() % dist) - dist / 2);
 		scene[i].position = glm::vec3(0,-2.0f,0);
