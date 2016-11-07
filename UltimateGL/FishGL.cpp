@@ -122,9 +122,10 @@ void FishGL::Run()
 		glClear(GL_DEPTH_BUFFER_BIT);
 		i_renderScene(m_view, true);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, m_size.x, m_size.y); //reset viewport
+
 
 		//color render
-		glViewport(0, 0, m_size.x, m_size.y); //reset viewport
 		//glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 		glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -470,6 +471,12 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 	//moving
 	//main_shader->Use();
 	//glBindVertexArray(VAO);
+	GLfloat near_plane = 1.0f, far_plane = 20.0f;
+	glm::mat4 lightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, near_plane, far_plane);
+	glm::mat4 lightView = glm::lookAt(glm::vec3(m_light.position.x, 10.0f, m_light.position.z),
+		glm::vec3(0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 lightMatrix = lightProjection * lightView;
 
 	for (GLuint i = 0; i < m_scene.size(); i++)
 	{
@@ -480,7 +487,7 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 			shader = m_scene[i].shader;
 
 		//DEBUG
-		if (i == -1)
+		if (i == 0)
 			shader = m_depthshader;
 
 		shader->Use();
@@ -502,12 +509,6 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 			glUniformMatrix4fv(glGetUniformLocation(m_scene[i].shader->Program, "view"), 1, GL_FALSE, glm::value_ptr(m_view));
 		}
 
-		GLfloat near_plane = 1.0f, far_plane = 19.5f;
-		glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-		glm::mat4 lightView =glm::lookAt(	glm::vec3(m_light.position.x,10.0f, m_light.position.z),
-											glm::vec3(0.0f),
-											glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::mat4 lightMatrix = lightProjection * lightView;
 		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "lightMatrix"), 1, GL_FALSE, glm::value_ptr(lightMatrix));
 
 		glBindVertexArray(m_scene[i].VAO);
@@ -531,15 +532,18 @@ void FishGL::i_initShadow()
 {
 	glGenFramebuffers(1, &m_shadow.depthFBO);
 
-	m_shadow.size = 1024;
+	m_shadow.size = 2048;
 
 	glGenTextures(1, &m_shadow.depthTex);
 	glBindTexture(GL_TEXTURE_2D, m_shadow.depthTex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_shadow.size, m_shadow.size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+	GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_shadow.depthFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_shadow.depthTex, 0);
