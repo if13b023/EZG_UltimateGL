@@ -68,7 +68,7 @@ void FishGL::Run()
 
 	while (!glfwWindowShouldClose(m_window))
 	{
-		glEnable(GL_DEPTH_TEST);
+		//glEnable(GL_DEPTH_TEST);
 		glm::mat4 m_view;
 
 		dt = glfwGetTime() - lastframe;

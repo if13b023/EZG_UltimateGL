@@ -51,8 +51,11 @@ float shadowCalc(vec4 fragPosLightSpace)
 
 void main()
 {
-	vec3 color = texture(mainTexture,  fs_in.uvCoords).rgb;
+	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 norm = normalize(fs_in.Normal);
+	//vec3 color = texture(mainTexture,  fs_in.uvCoords).rgb;
+	float angle = dot(viewDir, norm);
+	vec3 color = sin(angle) * vec3(0, 0.8, 1) + sin(angle+90) * vec3(1, 0.6, 0) + sin(angle+180) * vec3(1, 0, 1);
 	
     // Ambient
     float ambientStrength = 0.1;
@@ -65,7 +68,6 @@ void main()
     
     // Specular
     float specularStrength = 0.5;
-    vec3 viewDir = normalize(viewPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * spec * lightColor;  
@@ -74,5 +76,5 @@ void main()
 	float shadow = shadowCalc(fs_in.fragPosLightSpace);
 	//shadow = 0.0;
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular));
-    fragColor = vec4(lighting, 1.0);
+    fragColor = vec4(lighting, 1.0) ;
 }

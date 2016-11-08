@@ -131,7 +131,7 @@ int main()
 		}
 	}
 
-	Shader* main_shader = engine.addShader("VertexShader.glsl", "FragmentShader.glsl");
+	Shader* main_shader = engine.addShader("VertexShader.glsl", "FragmentShader_Fancy.glsl");
 
 	short dist = 5;
 	std::vector<sceneobj> scene;
