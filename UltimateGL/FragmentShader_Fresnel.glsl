@@ -49,35 +49,12 @@ float shadowCalc(vec4 fragPosLightSpace)
     return shadow;
 }
 
-vec3 getColorFromRamp(float val)
-{
-	vec3 ramp[3] = vec3[3](vec3(0.48, 1, 0),  vec3(0, 0.53, 1), vec3(1, 0, 0.53)  );
-	
-	int i1, i2;
-	float fractBetween;
-	
-	if(val <= 0.0)
-		i1 = i2 = 0;
-	else if(val >= 1.0)
-		i1 = i2 = 2;
-	else
-	{
-		val = val * 3;
-		i1 = int(floor(val));
-		i2 = i1 + 1;
-		fractBetween = val - float(i1);
-	}
-	
-	return (ramp[i2] - ramp[i1])*fractBetween + ramp[i1];
-}
-
 void main()
 {
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 norm = normalize(fs_in.Normal);
-	//vec3 color = texture(mainTexture,  fs_in.uvCoords).rgb;
-	float angle = min(1, max(0, dot(viewDir, norm)));
-	vec3 color = getColorFromRamp(angle);
+	vec3 color = texture(mainTexture,  fs_in.uvCoords).rgb;
+	float angle = max(0, dot(viewDir, norm));
 	
     // Ambient
     float ambientStrength = 0.1;
@@ -93,6 +70,8 @@ void main()
     vec3 reflectDir = reflect(-lightDir, norm);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * spec * lightColor;  
+	
+	specular += (1 - specular) * pow((1-angle), 5);
 	
 	//Shadow
 	float shadow = shadowCalc(fs_in.fragPosLightSpace);

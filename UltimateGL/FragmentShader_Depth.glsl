@@ -18,8 +18,8 @@ uniform sampler2D depthMap;
 
 void main()
 {
-	//vec3 color = texture(depthMap,  fs_in.uvCoords).rgb;
+	fragColor = vec4(texture(depthMap,  fs_in.uvCoords).rgb, 1.0);
 	
-    fragColor = vec4(vec3(texture(depthMap,  fs_in.uvCoords).r), 1.0) ;
+    //fragColor = vec4(vec3(texture(depthMap,  fs_in.uvCoords).r), 1.0) ;
 }
 
