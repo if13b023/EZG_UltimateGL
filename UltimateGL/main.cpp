@@ -41,8 +41,8 @@ int main()
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 
-	//ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "suzanne_uv.obj");
-	ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "scene4.obj");
+	ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "suzanne.obj");
+	//ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "scene4.obj");
 
 	if (!err.empty()) { // `err` may contain warning message.
 		std::cout << err << std::endl;
@@ -67,12 +67,31 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// Load, create texture and generate mipmaps
 	int width, height;
-	unsigned char* image = SOIL_load_image("concrete.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+	unsigned char* image = SOIL_load_image("suzanne_n.jpg", &width, &height, 0, SOIL_LOAD_RGB);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	SOIL_free_image_data(image);
 	glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
 
+									 // Load and create a texture 
+	GLuint normal;
+	// ====================
+	// Normalmap
+	// ====================
+	glGenTextures(1, &normal);
+	glBindTexture(GL_TEXTURE_2D, normal); // All upcoming GL_TEXTURE_2D operations now have effect on our texture object
+											// Set our texture parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// Set texture wrapping to GL_REPEAT
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// Set texture filtering
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// Load, create texture and generate mipmaps
+	image = SOIL_load_image("suzanne_n.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	SOIL_free_image_data(image);
+	glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
 
 	//sample preps
 	/*GLfloat vertices[] = {
@@ -119,7 +138,7 @@ int main()
 			if (index.texcoord_index != -1)
 			{
 				objects[i].data[j + 6] = attrib.texcoords[2 * index.texcoord_index + 0];
-				objects[i].data[j + 7] = attrib.texcoords[2 * index.texcoord_index + 1];
+				objects[i].data[j + 7] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
 			}
 			else
 			{
@@ -131,7 +150,7 @@ int main()
 		}
 	}
 
-	Shader* main_shader = engine.addShader("VertexShader.glsl", "FragmentShader_Fancy.glsl");
+	Shader* main_shader = engine.addShader("VertexShader.glsl", "FragmentShader.glsl");
 
 	short dist = 5;
 	std::vector<sceneobj> scene;
@@ -147,6 +166,7 @@ int main()
 		//scene[i].position = glm::vec3((rand() % dist) - dist / 2, (rand() % dist) - dist / 2, (rand() % dist) - dist / 2);
 		scene[i].position = glm::vec3(0,-2.0f,0);
 		scene[i].texture = texture1;
+		scene[i].normal = normal;
 	}
 	//*****
 

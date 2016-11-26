@@ -7,7 +7,9 @@ FishGL::FishGL()
 	m_drawAnimation(true),
 	m_animationPoints(nullptr),
 	m_AnimResolution(50),
-	m_lightCam(false)
+	m_lightCam(false),
+	m_shadowSwitch(true),
+	m_normalSwitch(true)
 {
 	glfwInit();
 	m_shaders.reserve(16);
@@ -16,7 +18,6 @@ FishGL::FishGL()
 	m_camera.rotation = glm::quat(glm::vec3(0, glm::radians(0.0f), 0));
 	m_light.position = glm::vec3(0.f, 5.0f, 0.f);
 }
-
 
 FishGL::~FishGL()
 {
@@ -148,12 +149,6 @@ void FishGL::key_callback(int key, int action)
 			case GLFW_KEY_ESCAPE: 
 				glfwSetWindowShouldClose(m_window, GL_TRUE);
 				break;
-			case GLFW_KEY_S:
-				//m_view = glm::translate(m_view, glm::vec3(0,0,-1.0f));
-				break;
-			case GLFW_KEY_W:
-				//m_view = glm::translate(m_view, glm::vec3(0, 0, 1.0f));
-				break;
 			case GLFW_KEY_T:
 				m_freemode = !m_freemode;
 				m_animation_start = glfwGetTime();
@@ -175,11 +170,17 @@ void FishGL::key_callback(int key, int action)
 				std::cout << m_camera.position.x << "|" << m_camera.position.y << "|" << m_camera.position.z << "|" << std::endl;
 				std::cout << m_camera.rotation.x << "|" << m_camera.rotation.y << "|" << m_camera.rotation.z << "|" << m_camera.rotation.w << "|" << std::endl;
 				break;
-			case GLFW_KEY_N:
+			case GLFW_KEY_Z:
 				m_drawAnimation = !m_drawAnimation;
 				break;
 			case GLFW_KEY_L:
 				m_lightCam = !m_lightCam;
+				break;
+			case GLFW_KEY_P:
+				m_shadowSwitch = !m_shadowSwitch;
+				break;
+			case GLFW_KEY_N:
+				m_normalSwitch = !m_normalSwitch;
 				break;
 		}
 	}
@@ -487,8 +488,8 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 			shader = m_scene[i].shader;
 
 		//DEBUG
-		if (i == 0)
-			shader = m_depthshader;
+		//if (i == 0)
+		//	shader = m_depthshader;
 
 		shader->Use();
 
@@ -501,6 +502,13 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, m_shadow.depthTex);
 			glUniform1i(glGetUniformLocation(shader->Program, "depthMap"), 1);
+
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, m_scene[i].normal);
+			glUniform1i(glGetUniformLocation(shader->Program, "normalMap"), 2);
+
+			glUniform1i(glGetUniformLocation(shader->Program, "shadowSwitch"), m_shadowSwitch);
+			glUniform1i(glGetUniformLocation(shader->Program, "normalSwitch"), m_normalSwitch);
 
 			glUniform3f(glGetUniformLocation(shader->Program, "objColor"), 0.0f, 1.f, 0.f);
 			glUniform3f(glGetUniformLocation(shader->Program, "lightColor"), 1.0f, 1.0f, 1.0f);

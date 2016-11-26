@@ -33,6 +33,7 @@ struct sceneobj {
 	float scale;
 	float dist;
 	GLuint texture;
+	GLuint normal;
 
 	bool operator < (const sceneobj& t) const
 	{
@@ -89,7 +90,10 @@ public:
 	void runAnimation(glm::vec3& pos, glm::quat& rot);
 	void drawAnimation(glm::mat4& view);
 	glm::vec3* getAnimation(int resolution);
+
 private:
+	bool m_shadowSwitch;
+	bool m_normalSwitch;
 	GLFWwindow* m_window;
 	glm::ivec2 m_size;
 	std::vector<GLuint> m_vbo, m_vao;

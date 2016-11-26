@@ -13,7 +13,10 @@ uniform vec3 objColor;
 uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
+uniform bool shadowSwitch;
+uniform bool normalSwitch;
 uniform sampler2D mainTexture;
+uniform sampler2D normalMap;
 uniform sampler2D depthMap;
 
 float shadowCalc(vec4 fragPosLightSpace)
@@ -53,6 +56,10 @@ void main()
 {
 	vec3 color = texture(mainTexture,  fs_in.uvCoords).rgb;
 	vec3 norm = normalize(fs_in.Normal);
+	if(normalSwitch)
+	{
+		norm = normalize(texture(normalMap, fs_in.uvCoords).rgb * 2.0 - 1.0);
+	}
 	
     // Ambient
     float ambientStrength = 0.1;
@@ -71,7 +78,9 @@ void main()
     vec3 specular = specularStrength * spec * lightColor;  
 	
 	//Shadow
-	float shadow = shadowCalc(fs_in.fragPosLightSpace);
+	float shadow = 0.0;
+	if(shadowSwitch)
+		shadow = shadowCalc(fs_in.fragPosLightSpace);
 	//shadow = 0.0;
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular));
     fragColor = vec4(lighting, 1.0);
