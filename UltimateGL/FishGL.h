@@ -81,6 +81,7 @@ public:
 	void addObject(GLfloat* vertices, int vSize, GLuint& vao);
 	void addObject(GLfloat* vertices, int vSize, GLuint* indices, int iSize, GLuint& vbo, GLuint& vao, GLuint& ebo);
 	void addObjectWithNormals(std::vector<GLfloat>& data, GLuint& vao);
+	void addObjectWithTangents(std::vector<GLfloat>& data, GLuint & vao);
 	Shader* addShader(const char* vertex, const char* fragment);
 	void setPerspective(float fovy, float aspect, float near, float far);
 	glm::mat4 getPerspective();
@@ -90,6 +91,8 @@ public:
 	void runAnimation(glm::vec3& pos, glm::quat& rot);
 	void drawAnimation(glm::mat4& view);
 	glm::vec3* getAnimation(int resolution);
+
+	static void calcTangents(glm::vec3* vert, glm::vec2* uv, glm::vec3& t, glm::vec3& b);
 
 private:
 	bool m_shadowSwitch;

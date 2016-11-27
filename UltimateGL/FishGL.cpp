@@ -295,6 +295,41 @@ void FishGL::addObjectWithNormals(std::vector<GLfloat>& data, GLuint & vao)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+void FishGL::addObjectWithTangents(std::vector<GLfloat>& data, GLuint & vao)
+{
+	GLuint vbo;
+
+	glGenVertexArrays(1, &vao);
+
+	glBindVertexArray(vao);
+
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), &data[0], GL_STATIC_DRAW);
+
+	glBindVertexArray(vao);
+	//Positions
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	//Normals
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+	////UVs
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
+	//Tangents
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (GLvoid*)(8 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(3);
+	//Bitangents
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (GLvoid*)(11 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(4);
+
+	// reset bindings for VAO and VBO
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 Shader * FishGL::addShader(const char * vertex, const char * fragment)
 {
 	Shader tmp(vertex, fragment);
@@ -464,6 +499,26 @@ glm::vec3* FishGL::getAnimation(int resolution)
 	}
 
 	return points;
+}
+
+void FishGL::calcTangents(glm::vec3 * vert, glm::vec2 * uv, glm::vec3 & t, glm::vec3 & b)
+{
+	glm::vec3 edge1 = vert[1] - vert[0];
+	glm::vec3 edge2 = vert[2] - vert[0];
+	glm::vec2 deltaUV1 = uv[1] - uv[0];
+	glm::vec2 deltaUV2 = uv[2] - uv[0];
+
+	GLfloat f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+	t.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+	t.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+	t.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+	t = glm::normalize(t);
+
+	b.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+	b.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+	b.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+	b = glm::normalize(b);
 }
 
 void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)

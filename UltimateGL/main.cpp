@@ -21,7 +21,7 @@ FishGL* global_engine_ptr = nullptr;
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
-int main()
+int main(int argc, char* argv[])
 {
 	FishGL engine;
 	global_engine_ptr = &engine;
@@ -41,8 +41,11 @@ int main()
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 
-	ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "suzanne.obj");
-	//ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "scene4.obj");
+	if(argc < 2)
+		ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "suzanne.obj");
+		//ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "scene4.obj");
+	else
+		ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, argv[1]);
 
 	if (!err.empty()) { // `err` may contain warning message.
 		std::cout << err << std::endl;
@@ -67,7 +70,7 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// Load, create texture and generate mipmaps
 	int width, height;
-	unsigned char* image = SOIL_load_image("suzanne_n.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+	unsigned char* image = SOIL_load_image("brickwall.jpg", &width, &height, 0, SOIL_LOAD_RGB);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	SOIL_free_image_data(image);
@@ -87,7 +90,7 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// Load, create texture and generate mipmaps
-	image = SOIL_load_image("suzanne_n.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+	image = SOIL_load_image("normal_map_tut.jpg", &width, &height, 0, SOIL_LOAD_RGB);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	SOIL_free_image_data(image);
@@ -121,29 +124,61 @@ int main()
 	for (int i = 0; i < shapes.size(); ++i)
 	{
 		objects[i].name = shapes[i].name;
-		objects[i].data.resize(shapes[i].mesh.indices.size()*dataSize);
-		for (int j = 0; j < shapes[i].mesh.indices.size()*dataSize; j += dataSize)
+		objects[i].data.resize(shapes[i].mesh.indices.size()*(dataSize + 6));
+		for (int j = 0; j < shapes[i].mesh.indices.size(); ++j)
 		{
-			tinyobj::index_t index = shapes[i].mesh.indices[j/dataSize];
+			tinyobj::index_t index = shapes[i].mesh.indices[j];
+			unsigned int dataInd = j * (dataSize + 6);
 
 			//Positions
-			objects[i].data[j+0] = attrib.vertices[3 * index.vertex_index + 0];
-			objects[i].data[j+1] = attrib.vertices[3 * index.vertex_index + 1];
-			objects[i].data[j+2] = attrib.vertices[3 * index.vertex_index + 2];
+			objects[i].data[dataInd + 0] = attrib.vertices[3 * index.vertex_index + 0];
+			objects[i].data[dataInd + 1] = attrib.vertices[3 * index.vertex_index + 1];
+			objects[i].data[dataInd + 2] = attrib.vertices[3 * index.vertex_index + 2];
 			//Normals
-			objects[i].data[j+3] = attrib.normals[3 * index.normal_index + 0];
-			objects[i].data[j+4] = attrib.normals[3 * index.normal_index + 1];
-			objects[i].data[j+5] = attrib.normals[3 * index.normal_index + 2];
+			objects[i].data[dataInd + 3] = attrib.normals[3 * index.normal_index + 0];
+			objects[i].data[dataInd + 4] = attrib.normals[3 * index.normal_index + 1];
+			objects[i].data[dataInd + 5] = attrib.normals[3 * index.normal_index + 2];
 			//Texture
 			if (index.texcoord_index != -1)
 			{
-				objects[i].data[j + 6] = attrib.texcoords[2 * index.texcoord_index + 0];
-				objects[i].data[j + 7] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
+				objects[i].data[dataInd + 6] = attrib.texcoords[2 * index.texcoord_index + 0];
+				objects[i].data[dataInd + 7] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
 			}
 			else
 			{
-				objects[i].data[j + 6] = 0.0f;
-				objects[i].data[j + 7] = 0.0f;
+				objects[i].data[dataInd + 6] = 0.0f;
+				objects[i].data[dataInd + 7] = 0.0f;
+			}
+
+			if ((j+1) % 3 == 0)
+			{
+				//Tangent
+				glm::vec3 tangent, bitangent;
+				glm::vec3 vert[3];
+				glm::vec2 uv[3];
+
+				for (int o = 0; o < 3; ++o)
+				{
+					vert[o].x = objects[i].data[(dataInd - (o*dataSize)) + 0];
+					vert[o].y = objects[i].data[(dataInd - (o*dataSize)) + 1];
+					vert[o].z = objects[i].data[(dataInd - (o*dataSize)) + 2];
+
+					uv[o].x = objects[i].data[(dataInd - (o*dataSize)) + 6];
+					uv[o].y = objects[i].data[(dataInd - (o*dataSize)) + 7];
+				}
+
+				FishGL::calcTangents(vert, uv, tangent, bitangent);
+
+				for (int o = 0; o < 3; ++o)
+				{
+					objects[i].data[(j - o) * (dataSize + 6) + 8] = tangent.x;
+					objects[i].data[(j - o) * (dataSize + 6) + 9] = tangent.y;
+					objects[i].data[(j - o) * (dataSize + 6) + 10] = tangent.z;
+
+					objects[i].data[(j - o) * (dataSize + 6) + 11] = bitangent.x;
+					objects[i].data[(j - o) * (dataSize + 6) + 12] = bitangent.y;
+					objects[i].data[(j - o) * (dataSize + 6) + 13] = bitangent.z;
+				}
 			}
 
 			//std::cout << objects[i].data[j + 0] << "|" << objects[i].data[j + 1] << "|" << objects[i].data[j + 2] << std::endl;
@@ -159,12 +194,13 @@ int main()
 	{
 		//scene[i].VAO = VAO;
 		//engine.addObject(attrib.vertices.data(), attrib.vertices.size(), objects[i].indices, objects[i].size, VBO, scene[i].VAO, scene[i].EBO);
-		engine.addObjectWithNormals(objects[i].data, scene[i].VAO);
+		//engine.addObjectWithNormals(objects[i].data, scene[i].VAO);
+		engine.addObjectWithTangents(objects[i].data, scene[i].VAO);
 		scene[i].iCount = objects[i].data.size() / 8;
 		scene[i].scale = 0.5f;
 		scene[i].shader = main_shader;
 		//scene[i].position = glm::vec3((rand() % dist) - dist / 2, (rand() % dist) - dist / 2, (rand() % dist) - dist / 2);
-		scene[i].position = glm::vec3(0,-2.0f,0);
+		scene[i].position = glm::vec3(0, -2.0f, 0);
 		scene[i].texture = texture1;
 		scene[i].normal = normal;
 	}
@@ -216,14 +252,14 @@ int main()
 	//****
 
 	engine.Run();
-	
+
 	// Properly de-allocate all resources once they've outlived their purpose
 	/*glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);*/
 
 	glfwTerminate();
-	
+
 	//std::cin.ignore();
 	return 0;
 }

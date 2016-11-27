@@ -2,8 +2,8 @@
 
 out vec4 fragColor;
 
-in VS_OUT{
-	vec3 Normal;
+in vertex_data{
+	mat3 TBN;
 	vec3 FragPos;
 	vec2 uvCoords;
 	vec4 fragPosLightSpace;
@@ -19,7 +19,7 @@ uniform sampler2D mainTexture;
 uniform sampler2D normalMap;
 uniform sampler2D depthMap;
 
-float shadowCalc(vec4 fragPosLightSpace)
+float shadowCalc(vec4 fragPosLightSpace, vec3 norm)
 {
 	// perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -33,7 +33,7 @@ float shadowCalc(vec4 fragPosLightSpace)
     // Get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     // Check whether current frag pos is in shadow
-	float bias = max(0.005 * (1.0 - dot(fs_in.Normal, normalize(lightPos - fs_in.FragPos))), 0.005);  
+	float bias = max(0.005 * (1.0 - dot(norm, normalize(lightPos - fs_in.FragPos))), 0.005);  
 
 	float shadow = 0.0;
 	vec2 texelSize = 1.0 / textureSize(depthMap, 0);
@@ -55,24 +55,22 @@ float shadowCalc(vec4 fragPosLightSpace)
 void main()
 {
 	vec3 color = texture(mainTexture,  fs_in.uvCoords).rgb;
-	vec3 norm = normalize(fs_in.Normal);
+	vec3 norm = vec3(1.0);
 	if(normalSwitch)
-	{
 		norm = normalize(texture(normalMap, fs_in.uvCoords).rgb * 2.0 - 1.0);
-	}
-	
+	norm = normalize(fs_in.TBN * norm);
     // Ambient
     float ambientStrength = 0.1;
     vec3 ambient = color * ambientStrength * lightColor;
   	
     // Diffuse 
-    vec3 lightDir = normalize(lightPos - fs_in.FragPos);
+    vec3 lightDir = fs_in.TBN * normalize(lightPos - fs_in.FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = color * diff * lightColor;
     
     // Specular
     float specularStrength = 0.5;
-    vec3 viewDir = normalize(viewPos - fs_in.FragPos);
+    vec3 viewDir = fs_in.TBN * normalize(viewPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * spec * lightColor;  
@@ -80,7 +78,7 @@ void main()
 	//Shadow
 	float shadow = 0.0;
 	if(shadowSwitch)
-		shadow = shadowCalc(fs_in.fragPosLightSpace);
+		shadow = shadowCalc(fs_in.fragPosLightSpace, norm);
 	//shadow = 0.0;
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular));
     fragColor = vec4(lighting, 1.0);
