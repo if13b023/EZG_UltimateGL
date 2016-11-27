@@ -124,11 +124,11 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < shapes.size(); ++i)
 	{
 		objects[i].name = shapes[i].name;
-		objects[i].data.resize(shapes[i].mesh.indices.size()*(dataSize + 6));
+		objects[i].data.resize(shapes[i].mesh.indices.size()*(dataSize + 3));
 		for (int j = 0; j < shapes[i].mesh.indices.size(); ++j)
 		{
 			tinyobj::index_t index = shapes[i].mesh.indices[j];
-			unsigned int dataInd = j * (dataSize + 6);
+			unsigned int dataInd = j * (dataSize + 3);
 
 			//Positions
 			objects[i].data[dataInd + 0] = attrib.vertices[3 * index.vertex_index + 0];
@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
 			if ((j+1) % 3 == 0)
 			{
 				//Tangent
-				glm::vec3 tangent, bitangent;
+				glm::vec3 tangent;
 				glm::vec3 vert[3];
 				glm::vec2 uv[3];
 
@@ -167,17 +167,13 @@ int main(int argc, char* argv[])
 					uv[o].y = objects[i].data[(dataInd - (o*dataSize)) + 7];
 				}
 
-				FishGL::calcTangents(vert, uv, tangent, bitangent);
+				FishGL::calcTangents(vert, uv, tangent);
 
 				for (int o = 0; o < 3; ++o)
 				{
-					objects[i].data[(j - o) * (dataSize + 6) + 8] = tangent.x;
-					objects[i].data[(j - o) * (dataSize + 6) + 9] = tangent.y;
-					objects[i].data[(j - o) * (dataSize + 6) + 10] = tangent.z;
-
-					objects[i].data[(j - o) * (dataSize + 6) + 11] = bitangent.x;
-					objects[i].data[(j - o) * (dataSize + 6) + 12] = bitangent.y;
-					objects[i].data[(j - o) * (dataSize + 6) + 13] = bitangent.z;
+					objects[i].data[(j - o) * (dataSize + 3) + 8] = tangent.x;
+					objects[i].data[(j - o) * (dataSize + 3) + 9] = tangent.y;
+					objects[i].data[(j - o) * (dataSize + 3) + 10] = tangent.z;
 				}
 			}
 

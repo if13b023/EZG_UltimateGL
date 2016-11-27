@@ -54,11 +54,14 @@ float shadowCalc(vec4 fragPosLightSpace, vec3 norm)
 
 void main()
 {
-	vec3 color = texture(mainTexture,  fs_in.uvCoords).rgb;
+	//vec3 color = texture(mainTexture,  fs_in.uvCoords).rgb;
 	vec3 norm = vec3(1.0);
 	if(normalSwitch)
 		norm = normalize(texture(normalMap, fs_in.uvCoords).rgb * 2.0 - 1.0);
-	norm = normalize(fs_in.TBN * norm);
+	//norm = normalize(fs_in.TBN * norm);
+	norm = fs_in.TBN[2];
+	
+	vec3 color = (norm + 1.0) * 2.0;
     // Ambient
     float ambientStrength = 0.1;
     vec3 ambient = color * ambientStrength * lightColor;

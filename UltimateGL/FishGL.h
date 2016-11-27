@@ -92,7 +92,7 @@ public:
 	void drawAnimation(glm::mat4& view);
 	glm::vec3* getAnimation(int resolution);
 
-	static void calcTangents(glm::vec3* vert, glm::vec2* uv, glm::vec3& t, glm::vec3& b);
+	static void calcTangents(glm::vec3* vert, glm::vec2* uv, glm::vec3& t);
 
 private:
 	bool m_shadowSwitch;

@@ -23,9 +23,9 @@ void main()
 	vs_out.FragPos = vec3(transform * vec4(position, 1.0));
 	vs_out.uvCoords = uv;
 	vs_out.fragPosLightSpace = lightMatrix * vec4(vs_out.FragPos, 1.0);
-	//mat3 ttransform = transpose(inverse(mat3(transform)));
-	vec3 T = normalize(vec3(transform * vec4(tangent,   0.0)));
-	vec3 N = normalize(vec3(transform * vec4(normal,    0.0)));
+	mat3 normalMatrix = transpose(inverse(mat3(transform)));
+	vec3 T = normalize(vec3(normalMatrix * tangent));
+	vec3 N = normalize(vec3(normalMatrix * normal));
 	vec3 B = cross(T, N);
 	vs_out.TBN = mat3(T, B, N);
 }
