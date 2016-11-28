@@ -129,33 +129,59 @@ int main(int argc, char* argv[])
 		size_t index_offset = 0;
 		for (size_t j = 0; j < shapes[i].mesh.num_face_vertices.size(); ++j)
 		{
-			unsigned int dataInd = j * (dataSize + 0);
 			int fv = shapes[i].mesh.num_face_vertices[j];
+			unsigned int dataIndOuter = j * fv * (dataSize + 0);
 
 			// Loop over vertices in the face.
 			for (size_t v = 0; v < fv; v++) {
 				// access to vertex
 				tinyobj::index_t idx = shapes[i].mesh.indices[index_offset + v];
+				unsigned int dataInd = dataIndOuter + (v * dataSize);
+				//int dataIndInt = (v*dataSize) + dataInd;
+
+				glm::vec3 tangent;
+				if ((j + 1) % 3 == 0 || j == 0)
+				{
+					//Tangent
+					glm::vec3 vert[3];
+					glm::vec2 uv[3];
+
+					for (int o = 0; o < 3; ++o)
+					{
+						vert[o].x = attrib.vertices[3 * idx.vertex_index + 0];
+						vert[o].y = attrib.vertices[3 * idx.vertex_index + 1];
+						vert[o].z = attrib.vertices[3 * idx.vertex_index + 2];
+
+						uv[o].x = attrib.texcoords[2 * idx.texcoord_index + 0];
+						uv[o].y = 1.0f - attrib.texcoords[2 * idx.texcoord_index + 1];
+					}
+
+					FishGL::calcTangents(vert, uv, tangent);
+				}
 
 				//Positions
-				objects[i].data[dataInd + v + 0] = attrib.vertices[3 * idx.vertex_index + 0];
-				objects[i].data[dataInd + v + 1] = attrib.vertices[3 * idx.vertex_index + 1];
-				objects[i].data[dataInd + v + 2] = attrib.vertices[3 * idx.vertex_index + 2];
+				objects[i].data[dataInd + 0] = attrib.vertices[3 * idx.vertex_index + 0];
+				objects[i].data[dataInd + 1] = attrib.vertices[3 * idx.vertex_index + 1];
+				objects[i].data[dataInd + 2] = attrib.vertices[3 * idx.vertex_index + 2];
 				//Normals
-				objects[i].data[dataInd + v + 3] = attrib.normals[3 * idx.normal_index + 0];
-				objects[i].data[dataInd + v + 4] = attrib.normals[3 * idx.normal_index + 1];
-				objects[i].data[dataInd + v + 5] = attrib.normals[3 * idx.normal_index + 2];
+				objects[i].data[dataInd + 3] = attrib.normals[3 * idx.normal_index + 0];
+				objects[i].data[dataInd + 4] = attrib.normals[3 * idx.normal_index + 1];
+				objects[i].data[dataInd + 5] = attrib.normals[3 * idx.normal_index + 2];
 				//Texture
 				if (idx.texcoord_index != -1)
 				{
-					objects[i].data[dataInd + v + 6] = attrib.texcoords[2 * idx.texcoord_index + 0];
-					objects[i].data[dataInd + v + 7] = 1.0f - attrib.texcoords[2 * idx.texcoord_index + 1];
+					objects[i].data[dataInd + 6] = attrib.texcoords[2 * idx.texcoord_index + 0];
+					objects[i].data[dataInd + 7] = 1.0f - attrib.texcoords[2 * idx.texcoord_index + 1];
 				}
 				else
 				{
-					objects[i].data[dataInd + v + 6] = 0.0f;
-					objects[i].data[dataInd + v + 7] = 0.0f;
+					objects[i].data[dataInd + 6] = 0.0f;
+					objects[i].data[dataInd + 7] = 0.0f;
 				}
+				//Tangents
+				objects[i].data[dataInd + 8] = tangent.x;
+				objects[i].data[dataInd + 9] = tangent.y;
+				objects[i].data[dataInd + 10] = tangent.z;
 			}
 			index_offset += fv;
 		}

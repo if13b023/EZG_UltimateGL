@@ -15,6 +15,8 @@
 #include "Shader.h"
 #include "SOIL.h"
 
+#define DEBUG(x) std::cout << #x << " = " << x << std::endl;
+
 //struct renderObj {
 //	renderObj()
 //		: VAO(0), textureID(0), iCount(0)

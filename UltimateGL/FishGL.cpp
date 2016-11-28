@@ -152,7 +152,7 @@ void FishGL::key_callback(int key, int action)
 			case GLFW_KEY_T:
 				m_freemode = !m_freemode;
 				m_animation_start = glfwGetTime();
-				std::cout << m_freemode << std::endl;
+				DEBUG(m_freemode);
 				break;
 			case GLFW_KEY_R:
 				std::cout << "frame[" << anim_count << "].position = glm::vec3(" << m_camera.position.x << "f, " << m_camera.position.y << "f, " << m_camera.position.z << "f);" << std::endl;
@@ -175,12 +175,15 @@ void FishGL::key_callback(int key, int action)
 				break;
 			case GLFW_KEY_L:
 				m_lightCam = !m_lightCam;
+				DEBUG(m_lightCam);
 				break;
 			case GLFW_KEY_P:
 				m_shadowSwitch = !m_shadowSwitch;
+				DEBUG(m_shadowSwitch);
 				break;
 			case GLFW_KEY_N:
 				m_normalSwitch = !m_normalSwitch;
+				DEBUG(m_normalSwitch);
 				break;
 		}
 	}
@@ -505,7 +508,10 @@ void FishGL::calcTangents(glm::vec3 * vert, glm::vec2 * uv, glm::vec3 & t)
 	glm::vec2 deltaUV1 = uv[1] - uv[0];
 	glm::vec2 deltaUV2 = uv[2] - uv[0];
 
-	GLfloat f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+	GLfloat n = deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y;
+	GLfloat f = 1.f;
+	if(n != 0.f)
+		f = 1.0f / n;
 
 	t.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
 	t.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);

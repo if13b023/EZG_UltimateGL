@@ -58,22 +58,22 @@ void main()
 	vec3 norm = vec3(1.0);
 	if(normalSwitch)
 		norm = normalize(texture(normalMap, fs_in.uvCoords).rgb * 2.0 - 1.0);
-	//norm = normalize(fs_in.TBN * norm);
-	norm = normalize(fs_in.TBN[2]);
+	norm = normalize(fs_in.TBN * norm);
+	//norm = fs_in.TBN[2];
+	//color = (norm + 1.0) * 2.0;
 	
-	//vec3 color = (norm + 1.0) * 2.0;
     // Ambient
     float ambientStrength = 0.1;
     vec3 ambient = color * ambientStrength * lightColor;
   	
     // Diffuse 
-    vec3 lightDir = fs_in.TBN * normalize(lightPos - fs_in.FragPos);
+    vec3 lightDir = /*fs_in.TBN * */normalize(lightPos - fs_in.FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = color * diff * lightColor;
     
     // Specular
     float specularStrength = 0.5;
-    vec3 viewDir = fs_in.TBN * normalize(viewPos - fs_in.FragPos);
+    vec3 viewDir = /*fs_in.TBN * */normalize(viewPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * spec * lightColor;  
