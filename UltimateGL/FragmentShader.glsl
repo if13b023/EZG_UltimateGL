@@ -14,7 +14,7 @@ uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
 uniform bool shadowSwitch;
-uniform bool normalFactor;
+uniform float normalFactor;
 uniform sampler2D mainTexture;
 uniform sampler2D normalMap;
 uniform sampler2D depthMap;
@@ -55,11 +55,11 @@ float shadowCalc(vec4 fragPosLightSpace, vec3 norm)
 void main()
 {
 	vec3 color = texture(mainTexture,  fs_in.uvCoords).rgb;
-	vec3 normFlat  = vec3(0.0,0.0,1.0);
 	vec3 normMap = normalize(texture(normalMap, fs_in.uvCoords).rgb * 2.0 - 1.0);
-	vec3 norm = normalize(fs_in.TBN * normalize(mix(normFlat, normMap, normalFactor)));
+	vec3 norm = normalize(fs_in.TBN * normMap);
+	norm = normalize(mix(fs_in.TBN[2], norm, normalFactor));
 	//norm = normalize(fs_in.TBN * normFlat);
-	//color = (norm + 1.0) * 2.0;
+	//color = (norm + 1.0) / 2.0;
 	
     // Ambient
     float ambientStrength = 0.1;
@@ -71,10 +71,10 @@ void main()
     vec3 diffuse = color * diff * lightColor;
     
     // Specular
-    float specularStrength = 0.5;
+    float specularStrength = 0.1;
     vec3 viewDir = /*fs_in.TBN * */normalize(viewPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);  
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 2);
     vec3 specular = specularStrength * spec * lightColor;  
 	
 	//Shadow

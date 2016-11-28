@@ -92,9 +92,17 @@ void FishGL::Run()
 			}
 
 			if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
-				m_camera.position -= sideVec * m_camera.rotation;
+				if (glfwGetKey(m_window, GLFW_KEY_N) == GLFW_PRESS && m_normalFactor > 0.f)
+					m_normalFactor -= 0.5f * dt;
+				else
+					m_camera.position -= sideVec * m_camera.rotation;
 			else if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
-				m_camera.position += sideVec * m_camera.rotation;
+				if (glfwGetKey(m_window, GLFW_KEY_N) == GLFW_PRESS && m_normalFactor < 1.f)
+					m_normalFactor += 0.5f * dt;
+				else
+					m_camera.position += sideVec * m_camera.rotation;
+
+			
 
 			glm::mat4 translate = glm::mat4(1.0f);
 			m_view = glm::translate(m_view, -m_camera.position);
@@ -182,9 +190,9 @@ void FishGL::key_callback(int key, int action)
 				DEBUG(m_shadowSwitch);
 				break;
 			case GLFW_KEY_N:
-				m_normalFactor += 0.1f;
+				/*m_normalFactor += 0.1f;
 				if (m_normalFactor > 1.1f)
-					m_normalFactor = 0.0f;
+					m_normalFactor = 0.0f;*/
 				DEBUG(m_normalFactor);
 				break;
 		}
@@ -563,7 +571,7 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 			glUniform1i(glGetUniformLocation(shader->Program, "normalMap"), 2);
 
 			glUniform1i(glGetUniformLocation(shader->Program, "shadowSwitch"), m_shadowSwitch);
-			glUniform1i(glGetUniformLocation(shader->Program, "normalFactor"), m_normalFactor);
+			glUniform1f(glGetUniformLocation(shader->Program, "normalFactor"), m_normalFactor);
 
 			glUniform3f(glGetUniformLocation(shader->Program, "objColor"), 0.0f, 1.f, 0.f);
 			glUniform3f(glGetUniformLocation(shader->Program, "lightColor"), 1.0f, 1.0f, 1.0f);
