@@ -14,7 +14,7 @@ uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
 uniform bool shadowSwitch;
-uniform bool normalSwitch;
+uniform bool normalFactor;
 uniform sampler2D mainTexture;
 uniform sampler2D normalMap;
 uniform sampler2D depthMap;
@@ -55,10 +55,10 @@ float shadowCalc(vec4 fragPosLightSpace, vec3 norm)
 void main()
 {
 	vec3 color = texture(mainTexture,  fs_in.uvCoords).rgb;
-	vec3 norm  = vec3(0.0,0.0,1.0);
-	if(normalSwitch)
-		norm = normalize(texture(normalMap, fs_in.uvCoords).rgb * 2.0 - 1.0);
-	norm = normalize(fs_in.TBN * norm);
+	vec3 normFlat  = vec3(0.0,0.0,1.0);
+	vec3 normMap = normalize(texture(normalMap, fs_in.uvCoords).rgb * 2.0 - 1.0);
+	vec3 norm = normalize(fs_in.TBN * normalize(mix(normFlat, normMap, normalFactor)));
+	//norm = normalize(fs_in.TBN * normFlat);
 	//color = (norm + 1.0) * 2.0;
 	
     // Ambient

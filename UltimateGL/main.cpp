@@ -169,28 +169,28 @@ int main(int argc, char* argv[])
 		//Insert Tangents
 		for (int i = 0; i < objects.size(); ++i)
 		{
+			int debug = 0;
 			for (int j = 0; j < objects[i].data.size(); j+=33)
 			{
 				glm::vec3 tangent;
-				if ((j + 1) % 3 == 0 || j == 0)
-				{
-					//Tangent
-					glm::vec3 vert[3];
-					glm::vec2 uv[3];
 
-					for (int o = 0; o < 3; ++o)
-					{
-						int indx = 11 * o;
-						vert[o].x = objects[i].data[j + indx + 0];
-						vert[o].y = objects[i].data[j + indx + 1];
-						vert[o].z = objects[i].data[j + indx + 2];
+				debug++;
+				//Tangent
+				glm::vec3 vert[3];
+				glm::vec2 uv[3];
 
-						uv[o].x = objects[i].data[j + indx + 6];
-						uv[o].y = objects[i].data[j + indx + 7];
-					}
+				for (int o = 0; o < 3; ++o)
+			{
+					int indx = 11 * o;
+					vert[o].x = objects[i].data[j + indx + 0];
+					vert[o].y = objects[i].data[j + indx + 1];
+					vert[o].z = objects[i].data[j + indx + 2];
 
-					FishGL::calcTangents(vert, uv, tangent);
+					uv[o].x = objects[i].data[j + indx + 6];
+					uv[o].y = objects[i].data[j + indx + 7];
 				}
+
+				FishGL::calcTangents(vert, uv, tangent);
 
 				for (int o = 0; o < 3; ++o)
 				{
@@ -200,6 +200,7 @@ int main(int argc, char* argv[])
 					objects[i].data[j + indx + 10] = tangent[2];
 				}
 			}
+			DEBUG(debug);
 		}
 	}
 

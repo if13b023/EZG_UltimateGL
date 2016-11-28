@@ -98,7 +98,7 @@ public:
 
 private:
 	bool m_shadowSwitch;
-	bool m_normalSwitch;
+	float m_normalFactor;
 	GLFWwindow* m_window;
 	glm::ivec2 m_size;
 	std::vector<GLuint> m_vbo, m_vao;

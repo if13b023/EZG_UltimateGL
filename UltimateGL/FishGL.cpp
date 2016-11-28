@@ -9,7 +9,7 @@ FishGL::FishGL()
 	m_AnimResolution(50),
 	m_lightCam(false),
 	m_shadowSwitch(true),
-	m_normalSwitch(true)
+	m_normalFactor(1.f)
 {
 	glfwInit();
 	m_shaders.reserve(16);
@@ -182,8 +182,10 @@ void FishGL::key_callback(int key, int action)
 				DEBUG(m_shadowSwitch);
 				break;
 			case GLFW_KEY_N:
-				m_normalSwitch = !m_normalSwitch;
-				DEBUG(m_normalSwitch);
+				m_normalFactor += 0.1f;
+				if (m_normalFactor > 1.1f)
+					m_normalFactor = 0.0f;
+				DEBUG(m_normalFactor);
 				break;
 		}
 	}
@@ -561,7 +563,7 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 			glUniform1i(glGetUniformLocation(shader->Program, "normalMap"), 2);
 
 			glUniform1i(glGetUniformLocation(shader->Program, "shadowSwitch"), m_shadowSwitch);
-			glUniform1i(glGetUniformLocation(shader->Program, "normalSwitch"), m_normalSwitch);
+			glUniform1i(glGetUniformLocation(shader->Program, "normalFactor"), m_normalFactor);
 
 			glUniform3f(glGetUniformLocation(shader->Program, "objColor"), 0.0f, 1.f, 0.f);
 			glUniform3f(glGetUniformLocation(shader->Program, "lightColor"), 1.0f, 1.0f, 1.0f);
