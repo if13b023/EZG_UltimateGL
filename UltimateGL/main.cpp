@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 	SOIL_free_image_data(image);
 	glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
 
-									 // Load and create a texture 
+	// Load and create a texture 
 	GLuint normal;
 	// ====================
 	// Normalmap
@@ -120,65 +120,100 @@ int main(int argc, char* argv[])
 
 	std::vector<mesh> objects;
 	objects.resize(shapes.size());
-	int dataSize = 8;
+	int dataSize = 8+3;
 	for (int i = 0; i < shapes.size(); ++i)
 	{
 		objects[i].name = shapes[i].name;
-		objects[i].data.resize(shapes[i].mesh.indices.size()*(dataSize + 3));
-		for (int j = 0; j < shapes[i].mesh.indices.size(); ++j)
+		objects[i].data.resize(shapes[i].mesh.num_face_vertices.size()*3*(dataSize + 0));
+		
+		size_t index_offset = 0;
+		for (size_t j = 0; j < shapes[i].mesh.num_face_vertices.size(); ++j)
 		{
-			tinyobj::index_t index = shapes[i].mesh.indices[j];
-			unsigned int dataInd = j * (dataSize + 3);
+			unsigned int dataInd = j * (dataSize + 0);
+			int fv = shapes[i].mesh.num_face_vertices[j];
 
-			//Positions
-			objects[i].data[dataInd + 0] = attrib.vertices[3 * index.vertex_index + 0];
-			objects[i].data[dataInd + 1] = attrib.vertices[3 * index.vertex_index + 1];
-			objects[i].data[dataInd + 2] = attrib.vertices[3 * index.vertex_index + 2];
-			//Normals
-			objects[i].data[dataInd + 3] = attrib.normals[3 * index.normal_index + 0];
-			objects[i].data[dataInd + 4] = attrib.normals[3 * index.normal_index + 1];
-			objects[i].data[dataInd + 5] = attrib.normals[3 * index.normal_index + 2];
-			//Texture
-			if (index.texcoord_index != -1)
-			{
-				objects[i].data[dataInd + 6] = attrib.texcoords[2 * index.texcoord_index + 0];
-				objects[i].data[dataInd + 7] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
-			}
-			else
-			{
-				objects[i].data[dataInd + 6] = 0.0f;
-				objects[i].data[dataInd + 7] = 0.0f;
-			}
+			// Loop over vertices in the face.
+			for (size_t v = 0; v < fv; v++) {
+				// access to vertex
+				tinyobj::index_t idx = shapes[i].mesh.indices[index_offset + v];
 
-			if ((j+1) % 3 == 0)
-			{
-				//Tangent
-				glm::vec3 tangent;
-				glm::vec3 vert[3];
-				glm::vec2 uv[3];
-
-				for (int o = 0; o < 3; ++o)
+				//Positions
+				objects[i].data[dataInd + v + 0] = attrib.vertices[3 * idx.vertex_index + 0];
+				objects[i].data[dataInd + v + 1] = attrib.vertices[3 * idx.vertex_index + 1];
+				objects[i].data[dataInd + v + 2] = attrib.vertices[3 * idx.vertex_index + 2];
+				//Normals
+				objects[i].data[dataInd + v + 3] = attrib.normals[3 * idx.normal_index + 0];
+				objects[i].data[dataInd + v + 4] = attrib.normals[3 * idx.normal_index + 1];
+				objects[i].data[dataInd + v + 5] = attrib.normals[3 * idx.normal_index + 2];
+				//Texture
+				if (idx.texcoord_index != -1)
 				{
-					vert[o].x = objects[i].data[(dataInd - (o*dataSize)) + 0];
-					vert[o].y = objects[i].data[(dataInd - (o*dataSize)) + 1];
-					vert[o].z = objects[i].data[(dataInd - (o*dataSize)) + 2];
-
-					uv[o].x = objects[i].data[(dataInd - (o*dataSize)) + 6];
-					uv[o].y = objects[i].data[(dataInd - (o*dataSize)) + 7];
+					objects[i].data[dataInd + v + 6] = attrib.texcoords[2 * idx.texcoord_index + 0];
+					objects[i].data[dataInd + v + 7] = 1.0f - attrib.texcoords[2 * idx.texcoord_index + 1];
 				}
-
-				FishGL::calcTangents(vert, uv, tangent);
-
-				for (int o = 0; o < 3; ++o)
+				else
 				{
-					objects[i].data[(j - o) * (dataSize + 3) + 8] = tangent.x;
-					objects[i].data[(j - o) * (dataSize + 3) + 9] = tangent.y;
-					objects[i].data[(j - o) * (dataSize + 3) + 10] = tangent.z;
+					objects[i].data[dataInd + v + 6] = 0.0f;
+					objects[i].data[dataInd + v + 7] = 0.0f;
 				}
 			}
-
-			//std::cout << objects[i].data[j + 0] << "|" << objects[i].data[j + 1] << "|" << objects[i].data[j + 2] << std::endl;
+			index_offset += fv;
 		}
+
+		//for (int j = 0; j < shapes[i].mesh.indices.size(); ++j)
+		//{
+		//	tinyobj::index_t index = shapes[i].mesh.indices[j];
+		//	unsigned int dataInd = j * (dataSize + 3);
+
+		//	//Positions
+		//	objects[i].data[dataInd + 0] = attrib.vertices[3 * index.vertex_index + 0];
+		//	objects[i].data[dataInd + 1] = attrib.vertices[3 * index.vertex_index + 1];
+		//	objects[i].data[dataInd + 2] = attrib.vertices[3 * index.vertex_index + 2];
+		//	//Normals
+		//	objects[i].data[dataInd + 3] = attrib.normals[3 * index.normal_index + 0];
+		//	objects[i].data[dataInd + 4] = attrib.normals[3 * index.normal_index + 1];
+		//	objects[i].data[dataInd + 5] = attrib.normals[3 * index.normal_index + 2];
+		//	//Texture
+		//	if (index.texcoord_index != -1)
+		//	{
+		//		objects[i].data[dataInd + 6] = attrib.texcoords[2 * index.texcoord_index + 0];
+		//		objects[i].data[dataInd + 7] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
+		//	}
+		//	else
+		//	{
+		//		objects[i].data[dataInd + 6] = 0.0f;
+		//		objects[i].data[dataInd + 7] = 0.0f;
+		//	}
+
+		//	if ((j+1) % 3 == 0)
+		//	{
+		//		//Tangent
+		//		glm::vec3 tangent;
+		//		glm::vec3 vert[3];
+		//		glm::vec2 uv[3];
+
+		//		for (int o = 0; o < 3; ++o)
+		//		{
+		//			vert[o].x = objects[i].data[(dataInd - (o*dataSize)) + 0];
+		//			vert[o].y = objects[i].data[(dataInd - (o*dataSize)) + 1];
+		//			vert[o].z = objects[i].data[(dataInd - (o*dataSize)) + 2];
+
+		//			uv[o].x = objects[i].data[(dataInd - (o*dataSize)) + 6];
+		//			uv[o].y = objects[i].data[(dataInd - (o*dataSize)) + 7];
+		//		}
+
+		//		FishGL::calcTangents(vert, uv, tangent);
+
+		//		for (int o = 0; o < 3; ++o)
+		//		{
+		//			objects[i].data[(j - o) * (dataSize + 3) + 8] = tangent.x;
+		//			objects[i].data[(j - o) * (dataSize + 3) + 9] = tangent.y;
+		//			objects[i].data[(j - o) * (dataSize + 3) + 10] = tangent.z;
+		//		}
+		//	}
+
+		//	//std::cout << objects[i].data[j + 0] << "|" << objects[i].data[j + 1] << "|" << objects[i].data[j + 2] << std::endl;
+		//}
 	}
 
 	Shader* main_shader = engine.addShader("VertexShader.glsl", "FragmentShader.glsl");
