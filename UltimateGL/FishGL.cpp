@@ -510,7 +510,7 @@ void FishGL::calcTangents(glm::vec3 * vert, glm::vec2 * uv, glm::vec3 & t)
 
 	GLfloat n = deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y;
 	GLfloat f = 1.f;
-	if(n != 0.f)
+	if(abs(n) > 0.001f)
 		f = 1.0f / n;
 
 	t.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);

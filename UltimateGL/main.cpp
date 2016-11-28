@@ -139,26 +139,6 @@ int main(int argc, char* argv[])
 				unsigned int dataInd = dataIndOuter + (v * dataSize);
 				//int dataIndInt = (v*dataSize) + dataInd;
 
-				glm::vec3 tangent;
-				if ((j + 1) % 3 == 0 || j == 0)
-				{
-					//Tangent
-					glm::vec3 vert[3];
-					glm::vec2 uv[3];
-
-					for (int o = 0; o < 3; ++o)
-					{
-						vert[o].x = attrib.vertices[3 * idx.vertex_index + 0];
-						vert[o].y = attrib.vertices[3 * idx.vertex_index + 1];
-						vert[o].z = attrib.vertices[3 * idx.vertex_index + 2];
-
-						uv[o].x = attrib.texcoords[2 * idx.texcoord_index + 0];
-						uv[o].y = 1.0f - attrib.texcoords[2 * idx.texcoord_index + 1];
-					}
-
-					FishGL::calcTangents(vert, uv, tangent);
-				}
-
 				//Positions
 				objects[i].data[dataInd + 0] = attrib.vertices[3 * idx.vertex_index + 0];
 				objects[i].data[dataInd + 1] = attrib.vertices[3 * idx.vertex_index + 1];
@@ -178,68 +158,49 @@ int main(int argc, char* argv[])
 					objects[i].data[dataInd + 6] = 0.0f;
 					objects[i].data[dataInd + 7] = 0.0f;
 				}
-				//Tangents
-				objects[i].data[dataInd + 8] = tangent.x;
-				objects[i].data[dataInd + 9] = tangent.y;
-				objects[i].data[dataInd + 10] = tangent.z;
+				//Tangent DEBUG
+				objects[i].data[dataInd + 8] = 66.6f;
+				objects[i].data[dataInd + 9] = 66.6f;
+				objects[i].data[dataInd + 10] = 66.6f;
 			}
 			index_offset += fv;
 		}
 
-		//for (int j = 0; j < shapes[i].mesh.indices.size(); ++j)
-		//{
-		//	tinyobj::index_t index = shapes[i].mesh.indices[j];
-		//	unsigned int dataInd = j * (dataSize + 3);
+		//Insert Tangents
+		for (int i = 0; i < objects.size(); ++i)
+		{
+			for (int j = 0; j < objects[i].data.size(); j+=33)
+			{
+				glm::vec3 tangent;
+				if ((j + 1) % 3 == 0 || j == 0)
+				{
+					//Tangent
+					glm::vec3 vert[3];
+					glm::vec2 uv[3];
 
-		//	//Positions
-		//	objects[i].data[dataInd + 0] = attrib.vertices[3 * index.vertex_index + 0];
-		//	objects[i].data[dataInd + 1] = attrib.vertices[3 * index.vertex_index + 1];
-		//	objects[i].data[dataInd + 2] = attrib.vertices[3 * index.vertex_index + 2];
-		//	//Normals
-		//	objects[i].data[dataInd + 3] = attrib.normals[3 * index.normal_index + 0];
-		//	objects[i].data[dataInd + 4] = attrib.normals[3 * index.normal_index + 1];
-		//	objects[i].data[dataInd + 5] = attrib.normals[3 * index.normal_index + 2];
-		//	//Texture
-		//	if (index.texcoord_index != -1)
-		//	{
-		//		objects[i].data[dataInd + 6] = attrib.texcoords[2 * index.texcoord_index + 0];
-		//		objects[i].data[dataInd + 7] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
-		//	}
-		//	else
-		//	{
-		//		objects[i].data[dataInd + 6] = 0.0f;
-		//		objects[i].data[dataInd + 7] = 0.0f;
-		//	}
+					for (int o = 0; o < 3; ++o)
+					{
+						int indx = 11 * o;
+						vert[o].x = objects[i].data[j + indx + 0];
+						vert[o].y = objects[i].data[j + indx + 1];
+						vert[o].z = objects[i].data[j + indx + 2];
 
-		//	if ((j+1) % 3 == 0)
-		//	{
-		//		//Tangent
-		//		glm::vec3 tangent;
-		//		glm::vec3 vert[3];
-		//		glm::vec2 uv[3];
+						uv[o].x = objects[i].data[j + indx + 6];
+						uv[o].y = objects[i].data[j + indx + 7];
+					}
 
-		//		for (int o = 0; o < 3; ++o)
-		//		{
-		//			vert[o].x = objects[i].data[(dataInd - (o*dataSize)) + 0];
-		//			vert[o].y = objects[i].data[(dataInd - (o*dataSize)) + 1];
-		//			vert[o].z = objects[i].data[(dataInd - (o*dataSize)) + 2];
+					FishGL::calcTangents(vert, uv, tangent);
+				}
 
-		//			uv[o].x = objects[i].data[(dataInd - (o*dataSize)) + 6];
-		//			uv[o].y = objects[i].data[(dataInd - (o*dataSize)) + 7];
-		//		}
-
-		//		FishGL::calcTangents(vert, uv, tangent);
-
-		//		for (int o = 0; o < 3; ++o)
-		//		{
-		//			objects[i].data[(j - o) * (dataSize + 3) + 8] = tangent.x;
-		//			objects[i].data[(j - o) * (dataSize + 3) + 9] = tangent.y;
-		//			objects[i].data[(j - o) * (dataSize + 3) + 10] = tangent.z;
-		//		}
-		//	}
-
-		//	//std::cout << objects[i].data[j + 0] << "|" << objects[i].data[j + 1] << "|" << objects[i].data[j + 2] << std::endl;
-		//}
+				for (int o = 0; o < 3; ++o)
+				{
+					int indx = 11 * o;
+					objects[i].data[j + indx + 8] = tangent[0];
+					objects[i].data[j + indx + 9] = tangent[1];
+					objects[i].data[j + indx + 10] = tangent[2];
+				}
+			}
+		}
 	}
 
 	Shader* main_shader = engine.addShader("VertexShader.glsl", "FragmentShader.glsl");
