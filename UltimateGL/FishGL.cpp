@@ -19,6 +19,11 @@ FishGL::FishGL()
 	m_vbo.reserve(16);
 	m_camera.rotation = glm::quat(glm::vec3(0, glm::radians(0.0f), 0));
 	m_light.position = glm::vec3(0.f, 5.0f, 0.f);
+
+	if (FT_Init_FreeType(&m_ftlib)) {
+		std::cout << "Could not init freetype library\n";
+		exit(666);
+	}
 }
 
 FishGL::~FishGL()
