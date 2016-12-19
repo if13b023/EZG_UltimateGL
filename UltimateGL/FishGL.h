@@ -98,9 +98,12 @@ public:
 	static void calcTangents(glm::vec3* vert, glm::vec2* uv, glm::vec3& t);
 
 private:
-	bool m_shadowSwitch;
-	float m_normalFactor;
+	bool m_shadowSwitch, m_AA;
+	int m_AASamples;
+	float m_normalFactor,
+			m_fps;
 	GLFWwindow* m_window;
+	GLuint m_framebuffer, m_rbo, m_textureColorBufferMultiSampled;
 	glm::ivec2 m_size;
 	std::vector<GLuint> m_vbo, m_vao;
 	std::vector<Shader> m_shaders;
@@ -125,4 +128,6 @@ private:
 
 	void i_renderScene(glm::mat4& view, bool isShadow = false);
 	void i_initShadow();
+	GLuint i_generateMultiSampleTexture(GLuint samples);
+	void i_generateNewFrameBuffer();
 };

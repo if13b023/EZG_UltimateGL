@@ -9,7 +9,9 @@ FishGL::FishGL()
 	m_AnimResolution(50),
 	m_lightCam(false),
 	m_shadowSwitch(true),
-	m_normalFactor(1.f)
+	m_normalFactor(1.f),
+	m_AA(false),
+	m_AASamples(1)
 {
 	glfwInit();
 	m_shaders.reserve(16);
@@ -26,10 +28,20 @@ FishGL::~FishGL()
 
 GLFWwindow * FishGL::createWindow(int width, int height)
 {
+	//AntiAliasing
+	if (m_AA)
+	{
+		//glfwWindowHint(GLFW_SAMPLES, m_AASamples);
+		glEnable(GL_MULTISAMPLE);
+	}else
+		glDisable(GL_MULTISAMPLE);
+
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+	//int monitorSize;
+	//GLFWmonitor** monitors = glfwGetMonitors(&monitorSize);
 	m_window = glfwCreateWindow(width, height, "LearnOpenGL", nullptr, nullptr);
 	if (m_window == nullptr)
 	{
@@ -55,7 +67,50 @@ GLFWwindow * FishGL::createWindow(int width, int height)
 
 	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+	i_generateNewFrameBuffer();
+
 	return m_window;
+}
+
+GLuint FishGL::i_generateMultiSampleTexture(GLuint samples)
+{
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+	glDeleteTextures(1, &m_textureColorBufferMultiSampled);
+
+	GLuint texture;
+	glGenTextures(1, &texture);
+
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture);
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB, m_size.x, m_size.y, GL_TRUE);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+
+	return texture;
+}
+
+void FishGL::i_generateNewFrameBuffer()
+{
+	std::cout << "Samples " << m_AASamples << std::endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glDeleteFramebuffers(1, &m_framebuffer);
+	glDeleteRenderbuffers(1, &m_rbo);
+
+	//FBO
+	glGenFramebuffers(1, &m_framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+	// Create a multisampled color attachment texture
+	m_textureColorBufferMultiSampled = i_generateMultiSampleTexture(m_AASamples);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, m_textureColorBufferMultiSampled, 0);
+	// Create a renderbuffer object for depth and stencil attachments
+	glGenRenderbuffers(1, &m_rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_AASamples, GL_DEPTH24_STENCIL8, m_size.x, m_size.y);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void FishGL::Run()
@@ -74,6 +129,7 @@ void FishGL::Run()
 
 		dt = glfwGetTime() - lastframe;
 		lastframe = glfwGetTime();
+		m_fps = 1.f / dt;
 
 		if (m_freemode && m_animation != nullptr)
 		{
@@ -135,6 +191,7 @@ void FishGL::Run()
 
 
 		//color render
+		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
 		//glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 		glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -142,6 +199,11 @@ void FishGL::Run()
 		
 		//if(m_drawAnimation && false)
 		//	drawAnimation(m_view);
+
+		// 2. Now blit multisampled buffer(s) to default framebuffers
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, m_framebuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBlitFramebuffer(0, 0, m_size.x, m_size.y, 0, 0, m_size.x, m_size.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 		//swap buffers
 		glfwSwapBuffers(m_window);
@@ -174,10 +236,10 @@ void FishGL::key_callback(int key, int action)
 				m_animationPoints = getAnimation(m_AnimResolution);
 
 				break;
-			case GLFW_KEY_I:
+			/*case GLFW_KEY_I:
 				std::cout << m_camera.position.x << "|" << m_camera.position.y << "|" << m_camera.position.z << "|" << std::endl;
 				std::cout << m_camera.rotation.x << "|" << m_camera.rotation.y << "|" << m_camera.rotation.z << "|" << m_camera.rotation.w << "|" << std::endl;
-				break;
+				break;*/
 			case GLFW_KEY_Z:
 				m_drawAnimation = !m_drawAnimation;
 				break;
@@ -194,6 +256,39 @@ void FishGL::key_callback(int key, int action)
 				if (m_normalFactor > 1.1f)
 					m_normalFactor = 0.0f;*/
 				DEBUG(m_normalFactor);
+				break;
+			case GLFW_KEY_I:
+				/*if (m_AA)
+				{
+					m_AASamples = 1;
+					m_AA = false;
+				}
+				else
+				{
+					m_AA = true;
+					m_AASamples = 8;
+				}*/
+				i_generateNewFrameBuffer();
+				DEBUG(m_fps);
+				break;
+
+			case GLFW_KEY_1: m_AASamples = 1;
+				break;
+			case GLFW_KEY_2: m_AASamples = 2;
+				break;
+			case GLFW_KEY_3: m_AASamples = 3;
+				break;
+			case GLFW_KEY_4: m_AASamples = 4;
+				break;
+			case GLFW_KEY_5: m_AASamples = 5;
+				break;
+			case GLFW_KEY_6: m_AASamples = 6;
+				break;
+			case GLFW_KEY_7: m_AASamples = 7;
+				break;
+			case GLFW_KEY_8: m_AASamples = 8;
+				break;
+			case GLFW_KEY_9: m_AASamples = 9;
 				break;
 		}
 	}

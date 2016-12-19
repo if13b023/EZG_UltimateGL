@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
 					objects[i].data[j + indx + 10] = tangent[2];
 				}
 			}
-			DEBUG(debug);
+			//DEBUG(debug);
 		}
 	}
 
