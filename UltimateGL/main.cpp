@@ -61,9 +61,8 @@ int main(int argc, char* argv[])
 	// Texture 1
 	// ====================
 	glGenTextures(1, &texture1);
-	glBindTexture(GL_TEXTURE_2D, texture1); // All upcoming GL_TEXTURE_2D operations now have effect on our texture object
-											// Set our texture parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// Set texture wrapping to GL_REPEAT
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	// Set texture filtering
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -74,7 +73,7 @@ int main(int argc, char* argv[])
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	SOIL_free_image_data(image);
-	glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// Load and create a texture 
 	GLuint normal;
@@ -82,36 +81,20 @@ int main(int argc, char* argv[])
 	// Normalmap
 	// ====================
 	glGenTextures(1, &normal);
-	glBindTexture(GL_TEXTURE_2D, normal); // All upcoming GL_TEXTURE_2D operations now have effect on our texture object
-											// Set our texture parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// Set texture wrapping to GL_REPEAT
+	glBindTexture(GL_TEXTURE_2D, normal);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	// Set texture filtering
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// Load, create texture and generate mipmaps
-	image = SOIL_load_image("sphere_n.png", &width, &height, 0, SOIL_LOAD_RGB);
+	image = SOIL_load_image("concrete2_n.jpg", &width, &height, 0, SOIL_LOAD_RGB);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	SOIL_free_image_data(image);
-	glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	//sample preps
-	/*GLfloat vertices[] = {
-	0.5f,  0.5f, 0.0f,  // Top Right
-	0.5f, -0.5f, 0.0f,  // Bottom Right
-	-0.5f, -0.5f, 0.0f,  // Bottom Left
-	-0.5f,  0.5f, 0.0f   // Top Left
-	};
-	GLuint indices[] = {  // Note that we start from 0!
-	0, 1, 3,   // First Triangle
-	1, 2, 3    // Second Triangle
-	};*/
-
-	//GLfloat* suzanne_vertices = new GLfloat[attrib.vertices.size()];
-	/*GLuint* suzanne_indices = new GLuint[shapes[0].mesh.indices.size()];
-	for (int i = 0; i < shapes[0].mesh.indices.size(); ++i)
-		suzanne_indices[i] = shapes[0].mesh.indices[i].vertex_index;*/
 	struct mesh
 	{
 		std::string name;
@@ -222,6 +205,7 @@ int main(int argc, char* argv[])
 		scene[i].position = glm::vec3(0, -2.0f, 0);
 		scene[i].texture = texture1;
 		scene[i].normal = normal;
+		scene[i].color = glm::vec3(1.0f, 0.f, 0.f);
 	}
 	//*****
 

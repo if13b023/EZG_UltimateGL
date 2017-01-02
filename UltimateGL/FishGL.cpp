@@ -9,9 +9,10 @@ FishGL::FishGL()
 	m_AnimResolution(50),
 	m_lightCam(false),
 	m_shadowSwitch(true),
-	m_normalFactor(1.f),
+	m_normalFactor(.5f),
 	m_AA(false),
-	m_AASamples(1)
+	m_AASamples(1),
+	m_lineId(-1)
 {
 	glfwInit();
 	m_shaders.reserve(16);
@@ -120,20 +121,20 @@ void FishGL::i_generateNewFrameBuffer()
 
 void FishGL::Run()
 {
-	double lastframe = glfwGetTime();
-	dt = 0.014;
+	float lastframe = static_cast<float>(glfwGetTime());
+	dt = 0.014f;
 
 	//init shadows
 	i_initShadow();
-	m_depthshader = addShader("VertexShader.glsl", "FragmentShader_Depth.glsl");
+	m_lineShader = addShader("VertexShader.glsl", "FragmentShader_Emission.glsl");
 
 	while (!glfwWindowShouldClose(m_window))
 	{
 		glEnable(GL_DEPTH_TEST);
 		glm::mat4 m_view;
 
-		dt = glfwGetTime() - lastframe;
-		lastframe = glfwGetTime();
+		dt = static_cast<float>(glfwGetTime()) - lastframe;
+		lastframe = static_cast<float>(glfwGetTime());
 		m_fps = 1.f / dt;
 
 		if (m_freemode && m_animation != nullptr)
@@ -198,7 +199,7 @@ void FishGL::Run()
 		//color render
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
 		//glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-		glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
+		glClearColor(0.69f, 0.69f, 0.69f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		i_renderScene(m_view);
 		
@@ -241,10 +242,14 @@ void FishGL::key_callback(int key, int action)
 				m_animationPoints = getAnimation(m_AnimResolution);
 
 				break;
-			/*case GLFW_KEY_I:
-				std::cout << m_camera.position.x << "|" << m_camera.position.y << "|" << m_camera.position.z << "|" << std::endl;
-				std::cout << m_camera.rotation.x << "|" << m_camera.rotation.y << "|" << m_camera.rotation.z << "|" << m_camera.rotation.w << "|" << std::endl;
-				break;*/
+			case GLFW_KEY_Q:
+			{
+				std::cout << "Camera Position: " << m_camera.position.x << "|" << m_camera.position.y << "|" << m_camera.position.z << std::endl;
+				std::cout << m_camera.rotation.y << "|" << m_camera.rotation.y << "|" << m_camera.rotation.z << std::endl;
+				glm::vec3 direction(m_camera.rotation.x, m_camera.rotation.y, m_camera.rotation.z);
+				addLine(m_camera.position, direction);
+			}
+				break;
 			case GLFW_KEY_Z:
 				m_drawAnimation = !m_drawAnimation;
 				break;
@@ -257,9 +262,6 @@ void FishGL::key_callback(int key, int action)
 				DEBUG(m_shadowSwitch);
 				break;
 			case GLFW_KEY_N:
-				/*m_normalFactor += 0.1f;
-				if (m_normalFactor > 1.1f)
-					m_normalFactor = 0.0f;*/
 				DEBUG(m_normalFactor);
 				break;
 			case GLFW_KEY_I:
@@ -456,7 +458,7 @@ void FishGL::setPerspective(float fovy, float aspect, float near, float far)
 	m_projection = glm::perspective(fovy, aspect, near, far);
 }
 
-glm::mat4 FishGL::getPerspective()
+glm::mat4 FishGL::getPerspective() const
 {
 	return m_projection;
 }
@@ -480,9 +482,9 @@ void FishGL::addAnimation(animation* anim)
 
 void FishGL::runAnimation(glm::vec3 & pos, glm::quat & rot)
 {
-	float anim_time = glfwGetTime() - m_animation_start;
+	float anim_time = static_cast<float>(glfwGetTime()) - m_animation_start;
 	float percent = (anim_time / m_animation->duration)*m_animation->count;
-	int index = floor(percent);
+	int index = int(floor(percent));
 
 	if (index >= m_animation->count)
 	{
@@ -578,7 +580,7 @@ glm::vec3* FishGL::getAnimation(int resolution)
 	for (int i = 0; i < resolution; ++i)
 	{
 		float percent = ((float)i / resolution)*m_animation->count;
-		int index = floor(percent);
+		int index = int(floor(percent));
 
 		int ind[4];
 		ind[0] = index - 1;
@@ -609,6 +611,47 @@ glm::vec3* FishGL::getAnimation(int resolution)
 	}
 
 	return points;
+}
+
+void FishGL::addLine(glm::vec3 start, glm::vec3 direction, float length)
+{
+	sceneobj* line;
+	if (m_lineId == -1)
+	{
+		line = new sceneobj();
+		line->shader = m_lineShader;
+		m_lineId = m_scene.size();
+		m_scene.push_back(*line);
+	}
+	else
+	{
+		line = &m_scene[m_lineId];
+	}
+
+	glm::vec3 end = start + (direction * length);
+	GLfloat vertices[] = {
+		start.x, start.y, start.z,
+		end.x, end.y, end.z
+	};
+
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glGenVertexArrays(1, &line->VAO);
+	glBindVertexArray(line->VAO);
+
+	//VBO
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+
+	// Position attribute
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (GLvoid*)0);
+
+	//CLEANUP
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void FishGL::calcTangents(glm::vec3 * vert, glm::vec2 * uv, glm::vec3 & t)
@@ -673,7 +716,7 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 			glUniform1i(glGetUniformLocation(shader->Program, "shadowSwitch"), m_shadowSwitch);
 			glUniform1f(glGetUniformLocation(shader->Program, "normalFactor"), m_normalFactor);
 
-			glUniform3f(glGetUniformLocation(shader->Program, "objColor"), 0.0f, 1.f, 0.f);
+			glUniform3f(glGetUniformLocation(shader->Program, "objColor"), m_scene[i].color.r, m_scene[i].color.g, m_scene[i].color.b);
 			glUniform3f(glGetUniformLocation(shader->Program, "lightColor"), 1.0f, 1.0f, 1.0f);
 			glUniform3fv(glGetUniformLocation(shader->Program, "lightPos"), 1, &m_light.position[0]);
 			glUniform3fv(glGetUniformLocation(m_scene[i].shader->Program, "viewPos"), 1, &m_camera.position[0]);

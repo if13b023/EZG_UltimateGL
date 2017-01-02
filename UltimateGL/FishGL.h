@@ -90,13 +90,15 @@ public:
 	void addObjectWithTangents(std::vector<GLfloat>& data, GLuint & vao);
 	Shader* addShader(const char* vertex, const char* fragment);
 	void setPerspective(float fovy, float aspect, float near, float far);
-	glm::mat4 getPerspective();
+	glm::mat4 getPerspective() const;
 	void addObjectToScene(sceneobj& obj);
 	void addObjectsToScene(sceneobj* obj, size_t size);
 	void addAnimation(animation* anim);
 	void runAnimation(glm::vec3& pos, glm::quat& rot);
 	void drawAnimation(glm::mat4& view);
 	glm::vec3* getAnimation(int resolution);
+
+	void addLine(glm::vec3 start, glm::vec3 direction, float length = 100.f);
 
 	static void calcTangents(glm::vec3* vert, glm::vec2* uv, glm::vec3& t);
 
@@ -115,7 +117,7 @@ private:
 	glm::vec2 mouse;
 	camera m_camera;
 	light m_light;
-	double dt;
+	float dt;
 	animation* m_animation;
 	bool m_freemode,
 		m_drawAnimation,
@@ -128,7 +130,8 @@ private:
 	FT_Library m_ftlib;
 
 	//DEBUG
-	Shader* m_depthshader;
+	Shader* m_lineShader;
+	int m_lineId;
 
 	void i_renderScene(glm::mat4& view, bool isShadow = false);
 	void i_initShadow();
