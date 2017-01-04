@@ -444,13 +444,12 @@ void FishGL::addObjectWithTangents(std::vector<GLfloat>& data, GLuint & vao)
 
 Shader * FishGL::addShader(const char * vertex, const char * fragment)
 {
-	Shader tmp(vertex, fragment);
-	tmp.Use();
+	m_shaders.push_back(new Shader(vertex, fragment));
+	m_shaders.back()->Use();
 
-	glUniformMatrix4fv(tmp.projId, 1, GL_FALSE, glm::value_ptr(m_projection));
+	glUniformMatrix4fv(m_shaders.back()->projId, 1, GL_FALSE, glm::value_ptr(m_projection));
 
-	m_shaders.push_back(tmp);
-	return &m_shaders[m_shaders.size() - 1];
+	return m_shaders.back();
 }
 
 void FishGL::setPerspective(float fovy, float aspect, float near, float far)
@@ -620,6 +619,7 @@ void FishGL::addLine(glm::vec3 start, glm::vec3 direction, float length)
 	{
 		line = new sceneobj();
 		line->shader = m_lineShader;
+		line->iCount = 9;
 		m_lineId = m_scene.size();
 		m_scene.push_back(*line);
 	}
@@ -631,7 +631,8 @@ void FishGL::addLine(glm::vec3 start, glm::vec3 direction, float length)
 	glm::vec3 end = start + (direction * length);
 	GLfloat vertices[] = {
 		start.x, start.y, start.z,
-		end.x, end.y, end.z
+		end.x, end.y, end.z,
+		start.x - 1, start.y - 1, start.z - 1,
 	};
 
 	GLuint vbo;
@@ -642,7 +643,7 @@ void FishGL::addLine(glm::vec3 start, glm::vec3 direction, float length)
 	//VBO
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
 
 	// Position attribute
 	glEnableVertexAttribArray(0);
@@ -695,7 +696,7 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 
 		//DEBUG
 		//if (i == 0)
-		//	shader = m_depthshader;
+			//shader = m_lineShader;
 
 		shader->Use();
 
@@ -734,9 +735,12 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 		//model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
 
 		glUniformMatrix4fv(shader->transId, 1, GL_FALSE, glm::value_ptr(transform));
-		//glUniform4f(m_scene[i].shader->fragmentColorId, iFl / m_scene.size(), iFl / m_scene.size(), iFl / m_scene.size(), 1.0f);
 
-		glDrawArrays(GL_TRIANGLES, 0, m_scene[i].iCount);
+		if(shader != m_lineShader)
+			glDrawArrays(GL_TRIANGLES, 0, m_scene[i].iCount);
+		else
+			glDrawArrays(GL_LINES, 0, m_scene[i].iCount);
+
 
 		glBindVertexArray(0);
 	}

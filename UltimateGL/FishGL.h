@@ -111,7 +111,7 @@ private:
 	GLuint m_framebuffer, m_rbo, m_textureColorBufferMultiSampled;
 	glm::ivec2 m_size;
 	std::vector<GLuint> m_vbo, m_vao;
-	std::vector<Shader> m_shaders;
+	std::vector<Shader*> m_shaders;
 	std::vector<sceneobj> m_scene;
 	glm::mat4 m_projection;
 	glm::vec2 mouse;
