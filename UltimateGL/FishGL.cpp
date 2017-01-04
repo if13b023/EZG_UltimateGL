@@ -177,8 +177,6 @@ void FishGL::Run()
 			runAnimation(pos, rot);
 			m_camera.position = -pos;
 			m_camera.rotation = rot;
-			//m_view = glm::translate(m_view, m_camera.position);
-			//m_view = glm::mat4_cast(m_camera.rotation) * m_view;
 			m_view = glm::toMat4(m_camera.rotation) * glm::translate(m_view, -m_camera.position);
 		}
 		//keyboard events
@@ -265,16 +263,6 @@ void FishGL::key_callback(int key, int action)
 				DEBUG(m_normalFactor);
 				break;
 			case GLFW_KEY_I:
-				/*if (m_AA)
-				{
-					m_AASamples = 1;
-					m_AA = false;
-				}
-				else
-				{
-					m_AA = true;
-					m_AASamples = 8;
-				}*/
 				i_generateNewFrameBuffer();
 				DEBUG(m_fps);
 				break;
@@ -304,15 +292,10 @@ void FishGL::key_callback(int key, int action)
 void FishGL::mouse_callback(double xpos, double ypos)
 {
 	const GLfloat sens = 0.3f;
-	//GLfloat diff_xpos = xpos - mouse.x;
-	//GLfloat diff_ypos = mouse.y - ypos;
 	glm::vec2 diff = glm::vec2(xpos, ypos) - mouse;
-	//m_camera.rotation = glm::normalize(glm::quat(glm::vec3(glm::radians(diff.y * dt * sens), glm::radians(diff.x * dt * sens), 0.0f)) * m_camera.rotation);
-	//m_camera.rotation = glm::normalize(glm::quat(glm::vec3(diff.y * dt * sens, diff.x * dt * sens, 0.0f)) * m_camera.rotation);
 	glm::quat yaw = glm::quat(glm::vec3(diff.y * dt * sens, 0.0f, 0.0f));
 	glm::quat pitch = glm::quat(glm::vec3(0.0f, diff.x * dt * sens, 0.0f));
 	m_camera.rotation = glm::normalize(yaw * m_camera.rotation * pitch);
-	//std::cout << m_camera.rotation.z << std::endl;
 	mouse.x = xpos;
 	mouse.y = ypos;
 }
@@ -332,14 +315,6 @@ void FishGL::addObject(GLfloat * vertices, int vSize, GLuint & vao)
 	// Position attribute
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (GLvoid*)0);
-	// Color attribute
-	//glEnableVertexAttribArray(1);
-	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-
-	//EBO
-	//glGenBuffers(1, &ebo);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize * sizeof(GLuint), indices, GL_STATIC_DRAW);
 
 	//CLEANUP
 	glBindVertexArray(0);
@@ -363,9 +338,6 @@ void FishGL::addObject(GLfloat* vertices, int vSize, GLuint* indices, int iSize,
 	// Position attribute
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (GLvoid*)0);
-	// Color attribute
-	//glEnableVertexAttribArray(1);
-	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 
 	//EBO
 	glGenBuffers(1, &ebo);
@@ -675,10 +647,6 @@ void FishGL::calcTangents(glm::vec3 * vert, glm::vec2 * uv, glm::vec3 & t)
 
 void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 {
-	//render stuff
-	//moving
-	//main_shader->Use();
-	//glBindVertexArray(VAO);
 	GLfloat near_plane = 1.0f, far_plane = 20.0f;
 	glm::mat4 lightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, near_plane, far_plane);
 	glm::mat4 lightView = glm::lookAt(glm::vec3(m_light.position.x, 10.0f, m_light.position.z),
@@ -731,8 +699,6 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 		glm::mat4 transform;
 		transform = glm::translate(transform, m_scene[i].position);
 		transform = glm::scale(transform, glm::vec3(m_scene[i].scale));
-		//GLfloat angle = 20.0f * i + static_cast<float>(glfwGetTime());
-		//model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
 
 		glUniformMatrix4fv(shader->transId, 1, GL_FALSE, glm::value_ptr(transform));
 
@@ -770,7 +736,4 @@ void FishGL::i_initShadow()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	m_shadow.shader = addShader("VertexShader_Shadow.glsl", "FragmentShader_Shadow.glsl");
-	
-	//m_shadow.shader->Use();
-	//glUniformMatrix4fv(m_shadow.shader->projId, 1, GL_FALSE, glm::value_ptr(m_projection));
 }
