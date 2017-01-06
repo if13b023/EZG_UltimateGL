@@ -36,6 +36,7 @@ struct sceneobj {
 	Shader* shader;
 	glm::vec3 color;
 	glm::vec3 position;
+	glm::vec3 origin;
 	float scale;
 	float dist;
 	GLuint texture;
@@ -45,6 +46,8 @@ struct sceneobj {
 	{
 		return (dist < t.dist);
 	}
+
+	static void calcOrigin();
 };
 
 struct keyframe {
@@ -75,6 +78,10 @@ struct shadow {
 	Shader* shader;
 };
 
+class kdNode {
+	kdNode* next;
+};
+
 class FishGL
 {
 public:
@@ -97,6 +104,7 @@ public:
 	void runAnimation(glm::vec3& pos, glm::quat& rot);
 	void drawAnimation(glm::mat4& view);
 	glm::vec3* getAnimation(int resolution);
+	
 
 	void addLine(glm::vec3 start, glm::vec3 direction, float length = 100.f);
 
@@ -131,10 +139,12 @@ private:
 
 	//DEBUG
 	Shader* m_lineShader;
-	int m_lineId;
+	GLfloat* m_lineVerts;
 
 	void i_renderScene(glm::mat4& view, bool isShadow = false);
 	void i_initShadow();
 	GLuint i_generateMultiSampleTexture(GLuint samples);
 	void i_generateNewFrameBuffer();
 };
+
+void glHandleError(const char* info = "");

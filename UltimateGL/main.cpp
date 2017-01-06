@@ -188,6 +188,7 @@ int main(int argc, char* argv[])
 	}
 
 	Shader* main_shader = engine.addShader("VertexShader.glsl", "FragmentShader.glsl");
+	Shader* test_shader = engine.addShader("VertexShader.glsl", "FragmentShader_Emission.glsl");
 
 	short dist = 5;
 	std::vector<sceneobj> scene;
@@ -200,12 +201,13 @@ int main(int argc, char* argv[])
 		engine.addObjectWithTangents(objects[i].data, scene[i].VAO);
 		scene[i].iCount = objects[i].data.size() / 8;
 		scene[i].scale = 0.5f;
+		//scene[i].shader = (rand() % 2 == 0) ? main_shader : test_shader;
 		scene[i].shader = main_shader;
 		//scene[i].position = glm::vec3((rand() % dist) - dist / 2, (rand() % dist) - dist / 2, (rand() % dist) - dist / 2);
 		scene[i].position = glm::vec3(0, -2.0f, 0);
 		scene[i].texture = texture1;
 		scene[i].normal = normal;
-		scene[i].color = glm::vec3(1.0f, 0.f, 0.f);
+		scene[i].color = glm::vec3(1.0f, 1.f, 1.f);
 	}
 	//*****
 

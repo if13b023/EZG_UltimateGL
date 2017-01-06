@@ -87,9 +87,9 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath)
 	glDeleteShader(fragment);
 
 	//viewId = glGetUniformLocation(this->Program, "view");
-	projId = glGetUniformLocation(this->Program, "projection");
-	transId = glGetUniformLocation(this->Program, "transform");
-	fragmentColorId = glGetUniformLocation(this->Program, "uniformColor");
+	//projId = glGetUniformLocation(this->Program, "projection");
+	//transId = glGetUniformLocation(this->Program, "transform");
+	//fragmentColorId = glGetUniformLocation(this->Program, "uniformColor");
 }
 
 // Uses the current shader

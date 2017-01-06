@@ -12,7 +12,7 @@ FishGL::FishGL()
 	m_normalFactor(.5f),
 	m_AA(false),
 	m_AASamples(1),
-	m_lineId(-1)
+	m_lineVerts(nullptr)
 {
 	glfwInit();
 	m_shaders.reserve(16);
@@ -46,6 +46,7 @@ GLFWwindow * FishGL::createWindow(int width, int height)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+
 	//int monitorSize;
 	//GLFWmonitor** monitors = glfwGetMonitors(&monitorSize);
 	m_window = glfwCreateWindow(width, height, "LearnOpenGL", nullptr, nullptr);
@@ -56,6 +57,7 @@ GLFWwindow * FishGL::createWindow(int width, int height)
 		return nullptr;
 	}
 	glfwMakeContextCurrent(m_window);
+	glGetError();
 
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK)
@@ -126,10 +128,12 @@ void FishGL::Run()
 
 	//init shadows
 	i_initShadow();
-	m_lineShader = addShader("VertexShader.glsl", "FragmentShader_Emission.glsl");
+
+	m_lineShader = m_shaders[1];
 
 	while (!glfwWindowShouldClose(m_window))
 	{
+		glGetError();
 		glEnable(GL_DEPTH_TEST);
 		glm::mat4 m_view;
 
@@ -200,7 +204,18 @@ void FishGL::Run()
 		glClearColor(0.69f, 0.69f, 0.69f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		i_renderScene(m_view);
-		
+
+		//draw line
+		/*
+		if (m_lineVerts != nullptr)
+		{
+			glGetError();
+			m_lineShader->Use();
+			glVertexPointer(6, GL_FLOAT, 0, m_lineVerts);
+			std::cout << glGetError() << std::endl;
+			glDrawArrays(GL_LINES, 0, 2);
+		}*/
+
 		//if(m_drawAnimation && false)
 		//	drawAnimation(m_view);
 
@@ -208,6 +223,7 @@ void FishGL::Run()
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, m_framebuffer);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		glBlitFramebuffer(0, 0, m_size.x, m_size.y, 0, 0, m_size.x, m_size.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glHandleError("post swap buffers");
 
 		//swap buffers
 		glfwSwapBuffers(m_window);
@@ -319,7 +335,7 @@ void FishGL::addObject(GLfloat * vertices, int vSize, GLuint & vao)
 	//CLEANUP
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	m_vao.push_back(vao);
 	m_vbo.push_back(vbo);
@@ -417,9 +433,9 @@ void FishGL::addObjectWithTangents(std::vector<GLfloat>& data, GLuint & vao)
 Shader * FishGL::addShader(const char * vertex, const char * fragment)
 {
 	m_shaders.push_back(new Shader(vertex, fragment));
-	m_shaders.back()->Use();
+	//m_shaders.back()->Use();
 
-	glUniformMatrix4fv(m_shaders.back()->projId, 1, GL_FALSE, glm::value_ptr(m_projection));
+	//glUniformMatrix4fv(m_shaders.back()->projId, 1, GL_FALSE, glm::value_ptr(m_projection));
 
 	return m_shaders.back();
 }
@@ -507,6 +523,7 @@ void FishGL::runAnimation(glm::vec3 & pos, glm::quat & rot)
 
 void FishGL::drawAnimation(glm::mat4& view)
 {
+	/*
 	m_scene[0].shader->Use();
 	GLuint viewId = glGetUniformLocation(m_scene[0].shader->Program, "view");
 	glBindVertexArray(m_scene[0].VAO);
@@ -541,7 +558,7 @@ void FishGL::drawAnimation(glm::mat4& view)
 		//glDrawElements(GL_TRIANGLES, m_scene[0].iCount, GL_UNSIGNED_INT, 0);
 	}
 
-	glBindVertexArray(0);
+	glBindVertexArray(0);*/
 }
 
 glm::vec3* FishGL::getAnimation(int resolution)
@@ -587,44 +604,31 @@ glm::vec3* FishGL::getAnimation(int resolution)
 void FishGL::addLine(glm::vec3 start, glm::vec3 direction, float length)
 {
 	sceneobj* line;
-	if (m_lineId == -1)
-	{
+	//if (m_lineId == -1)
+	//{
 		line = new sceneobj();
-		line->shader = m_lineShader;
-		line->iCount = 9;
-		m_lineId = m_scene.size();
-		m_scene.push_back(*line);
-	}
+		line->shader = m_shaders[0];
+		line->iCount = 6;
+		line->color = glm::vec3(0.f, 0.f, 1.f);
+		line->position = glm::vec3(0.f, 0.f, 0.f);
+		line->scale = 1.0f;
+		//m_lineId = m_scene.size();
+		//m_scene.push_back(*line);
+	/*}
 	else
 	{
 		line = &m_scene[m_lineId];
-	}
+	}*/
 
 	glm::vec3 end = start + (direction * length);
 	GLfloat vertices[] = {
 		start.x, start.y, start.z,
-		end.x, end.y, end.z,
-		start.x - 1, start.y - 1, start.z - 1,
+		end.x, end.y, end.z
+		//start.x - 1.f, start.y - 1.f, start.z - 1.f
 	};
 
-	GLuint vbo;
-	glGenBuffers(1, &vbo);
-	glGenVertexArrays(1, &line->VAO);
-	glBindVertexArray(line->VAO);
-
-	//VBO
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
-
-	// Position attribute
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (GLvoid*)0);
-
-	//CLEANUP
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	addObject(vertices, 6, line->VAO);
+	addObjectToScene(*line);
 }
 
 void FishGL::calcTangents(glm::vec3 * vert, glm::vec2 * uv, glm::vec3 & t)
@@ -657,17 +661,18 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 	for (GLuint i = 0; i < m_scene.size(); i++)
 	{
 		Shader* shader;
-		if (isShadow)
-			shader = m_shadow.shader;
+		if (!isShadow)
+		{
+			//if (i % 5 == 0)
+				//shader = m_lineShader;
+			//else
+				shader = m_scene[i].shader;
+			//shader = m_shaders[0];
+		}
 		else
-			shader = m_scene[i].shader;
-
-		//DEBUG
-		//if (i == 0)
-			//shader = m_lineShader;
+			shader = m_shadow.shader;
 
 		shader->Use();
-
 		if (!isShadow/* && false*/)
 		{
 			glActiveTexture(GL_TEXTURE0);
@@ -700,13 +705,12 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 		transform = glm::translate(transform, m_scene[i].position);
 		transform = glm::scale(transform, glm::vec3(m_scene[i].scale));
 
-		glUniformMatrix4fv(shader->transId, 1, GL_FALSE, glm::value_ptr(transform));
-
-		if(shader != m_lineShader)
-			glDrawArrays(GL_TRIANGLES, 0, m_scene[i].iCount);
-		else
+		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
+		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "projection"), 1, GL_FALSE, glm::value_ptr(m_projection));
+		if(m_scene[i].iCount == 6)
 			glDrawArrays(GL_LINES, 0, m_scene[i].iCount);
-
+		else
+			glDrawArrays(GL_TRIANGLES, 0, m_scene[i].iCount);
 
 		glBindVertexArray(0);
 	}
@@ -736,4 +740,47 @@ void FishGL::i_initShadow()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	m_shadow.shader = addShader("VertexShader_Shadow.glsl", "FragmentShader_Shadow.glsl");
+}
+
+void glHandleError(const char* info)
+{
+	GLenum err = glGetError();
+
+	if (err != GL_NO_ERROR)
+	{
+		char* fill = "";
+		if (strlen(info) > 0)
+		{
+			std::cout << info << ":\n";
+			fill = "\t";
+		}
+
+		while (err != GL_NO_ERROR)
+		{
+			std::cout << fill;
+			switch (err)
+			{
+			case GL_INVALID_ENUM: std::cout << fill << "GL_INVALID_ENUM\n";
+				break;
+			case GL_INVALID_VALUE: std::cout << "GL_INVALID_VALUE\n";
+				break;
+			case GL_INVALID_OPERATION: std::cout << "GL_INVALID_OPERATION\n";
+				break;
+			case GL_INVALID_FRAMEBUFFER_OPERATION: std::cout << "GL_INVALID_FRAMEBUFFER_OPERATION\n";
+				break;
+			case GL_OUT_OF_MEMORY: std::cout << "GL_OUT_OF_MEMORY\n";
+				break;
+			case GL_STACK_UNDERFLOW: std::cout << "GL_STACK_UNDERFLOW\n";
+				break;
+			case GL_STACK_OVERFLOW: std::cout << "GL_STACK_OVERFLOW\n";
+				break;
+			}
+			err = glGetError();
+		}
+	}
+}
+
+void sceneobj::calcOrigin()
+{
+
 }

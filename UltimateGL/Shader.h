@@ -12,7 +12,7 @@ class Shader
 public:
 	// The program ID
 	GLuint Program;
-	GLint projId, transId, fragmentColorId;
+	//GLint projId, transId, fragmentColorId;
 	// Constructor reads and builds the shader
 	Shader();
 	Shader(const GLchar* vertexPath, const GLchar* fragmentPath);
