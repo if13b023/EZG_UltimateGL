@@ -95,13 +95,7 @@ int main(int argc, char* argv[])
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	//sample preps
-	struct mesh
-	{
-		std::string name;
-		std::vector<GLfloat> data;
-	};
-
-	std::vector<mesh> objects;
+	std::vector<Mesh> objects;
 	objects.resize(shapes.size());
 	int dataSize = 8+3;
 	for (int i = 0; i < shapes.size(); ++i)
@@ -193,6 +187,9 @@ int main(int argc, char* argv[])
 	short dist = 5;
 	std::vector<sceneobj> scene;
 	scene.resize(objects.size());
+
+	//
+
 	for (GLuint i = 0; i < objects.size(); i++)
 	{
 		//scene[i].VAO = VAO;
@@ -208,6 +205,8 @@ int main(int argc, char* argv[])
 		scene[i].texture = texture1;
 		scene[i].normal = normal;
 		scene[i].color = glm::vec3(1.0f, 1.f, 1.f);
+		scene[i].meshPtr = &(objects[i]);
+		scene[i].calcOrigin();
 	}
 	//*****
 

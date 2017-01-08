@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <numeric>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -30,6 +31,12 @@
 //	GLuint textureID;
 //};
 
+struct Mesh
+{
+	std::string name;
+	std::vector<GLfloat> data;
+};
+
 struct sceneobj {
 	GLuint VAO;
 	GLsizei iCount;
@@ -41,13 +48,14 @@ struct sceneobj {
 	float dist;
 	GLuint texture;
 	GLuint normal;
+	Mesh* meshPtr;
 
 	bool operator < (const sceneobj& t) const
 	{
 		return (dist < t.dist);
 	}
 
-	static void calcOrigin();
+	void calcOrigin();
 };
 
 struct keyframe {
@@ -79,7 +87,12 @@ struct shadow {
 };
 
 class kdNode {
-	kdNode* next;
+	int axis;
+	float value;
+	kdNode* left;
+	kdNode* right;
+	kdNode* parent;
+	sceneobj* leaf;
 };
 
 class FishGL
@@ -87,28 +100,37 @@ class FishGL
 public:
 	FishGL();
 	~FishGL();
-	GLFWwindow* createWindow(int width, int height);
-	void Run();
+
+	//callbacks
 	void key_callback(int key, int action);
 	void mouse_callback(double xpos, double ypos);
+
+	GLFWwindow* createWindow(int width, int height);
+	void Run();
+	void calcKdTree();
+
+	//add geometry
 	void addObject(GLfloat* vertices, int vSize, GLuint& vao);
 	void addObject(GLfloat* vertices, int vSize, GLuint* indices, int iSize, GLuint& vbo, GLuint& vao, GLuint& ebo);
 	void addObjectWithNormals(std::vector<GLfloat>& data, GLuint& vao);
 	void addObjectWithTangents(std::vector<GLfloat>& data, GLuint & vao);
-	Shader* addShader(const char* vertex, const char* fragment);
-	void setPerspective(float fovy, float aspect, float near, float far);
-	glm::mat4 getPerspective() const;
 	void addObjectToScene(sceneobj& obj);
 	void addObjectsToScene(sceneobj* obj, size_t size);
+	Shader* addShader(const char* vertex, const char* fragment);
+	void addLine(glm::vec3 start, glm::vec3 direction, float length = 100.f);
+
+	//animation
 	void addAnimation(animation* anim);
 	void runAnimation(glm::vec3& pos, glm::quat& rot);
 	void drawAnimation(glm::mat4& view);
 	glm::vec3* getAnimation(int resolution);
-	
+	void setPerspective(float fovy, float aspect, float near, float far);	
 
-	void addLine(glm::vec3 start, glm::vec3 direction, float length = 100.f);
-
+	//statics
 	static void calcTangents(glm::vec3* vert, glm::vec2* uv, glm::vec3& t);
+
+	//const
+	glm::mat4 getPerspective() const;
 
 private:
 	bool m_shadowSwitch, m_AA;
@@ -136,15 +158,19 @@ private:
 	int m_AnimResolution;
 	shadow m_shadow;
 	FT_Library m_ftlib;
+	kdNode* m_kdRoot;
 
 	//DEBUG
 	Shader* m_lineShader;
 	GLfloat* m_lineVerts;
 
+	//internals
 	void i_renderScene(glm::mat4& view, bool isShadow = false);
 	void i_initShadow();
 	GLuint i_generateMultiSampleTexture(GLuint samples);
 	void i_generateNewFrameBuffer();
+	kdNode* i_kdTree(int axis);
+	float i_findMedian(int axis);
 };
 
 void glHandleError(const char* info = "");

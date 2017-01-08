@@ -131,6 +131,8 @@ void FishGL::Run()
 
 	m_lineShader = m_shaders[1];
 
+	calcKdTree();
+
 	while (!glfwWindowShouldClose(m_window))
 	{
 		glGetError();
@@ -228,6 +230,16 @@ void FishGL::Run()
 		//swap buffers
 		glfwSwapBuffers(m_window);
 	}
+}
+
+void FishGL::calcKdTree()
+{
+	m_kdRoot = i_kdTree(0);
+}
+
+kdNode * FishGL::i_kdTree(int axis)
+{
+	return nullptr;
 }
 
 void FishGL::key_callback(int key, int action)
@@ -782,5 +794,11 @@ void glHandleError(const char* info)
 
 void sceneobj::calcOrigin()
 {
-
+	glm::vec3 o;
+	for (int i = 0; i < meshPtr->data.size(); i++)
+	{
+		o +=(meshPtr->data[i]/meshPtr->data.size());
+	}
+	origin = o;
+	std::cout << "origin for " << meshPtr->name << ": " << o.x << "|" << o.y << "|" << o.z << std::endl;
 }
