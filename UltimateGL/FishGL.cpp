@@ -320,8 +320,10 @@ void FishGL::key_callback(int key, int action)
 			{
 				std::cout << "Camera Position: " << m_camera.position.x << "|" << m_camera.position.y << "|" << m_camera.position.z << std::endl;
 				std::cout << m_camera.rotation.y << "|" << m_camera.rotation.y << "|" << m_camera.rotation.z << std::endl;
-				glm::vec3 direction(m_camera.rotation.x, m_camera.rotation.y, m_camera.rotation.z);
-				addLine(m_camera.position, direction);
+				glm::quat rayRot(m_camera.rotation);
+				//rayRot = glm::rotate(rayRot, glm::vec3(0, 90, 0));
+				glm::vec3 rayRay(rayRot.x, rayRot.y, rayRot.z);
+				addLine(m_camera.position, rayRay);
 			}
 				break;
 			case GLFW_KEY_Z:
@@ -684,7 +686,6 @@ void FishGL::addLine(glm::vec3 start, glm::vec3 direction, float length)
 	GLfloat vertices[] = {
 		start.x, start.y, start.z,
 		end.x, end.y, end.z
-		//start.x - 1.f, start.y - 1.f, start.z - 1.f
 	};
 
 	addObject(vertices, 6, line->VAO);
@@ -843,7 +844,7 @@ void glHandleError(const char* info)
 void sceneobj::calcOrigin()
 {
 	glm::vec3 o;
-	for (int i = 0; i < meshPtr->data.size(); i+=3)
+	for (int i = 0; i < meshPtr->data.size(); i+=11)
 	{
 		o[0] += meshPtr->data[i + 0];
 		o[1] += meshPtr->data[i + 1];
