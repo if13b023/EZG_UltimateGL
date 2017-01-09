@@ -131,6 +131,7 @@ void FishGL::Run()
 
 	m_lineShader = m_shaders[1];
 
+	//std::cin.ignore();//to test kdTree memory allocation
 	calcKdTree();
 
 	while (!glfwWindowShouldClose(m_window))
