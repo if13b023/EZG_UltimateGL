@@ -86,12 +86,14 @@ struct shadow {
 	Shader* shader;
 };
 
-class kdNode {
+struct kdNode {
 	int axis;
 	float value;
+	glm::vec3 center;
+	glm::vec3 boundingBox;
 	kdNode* left;
 	kdNode* right;
-	kdNode* parent;
+	//kdNode* parent;
 	sceneobj* leaf;
 };
 
@@ -114,8 +116,8 @@ public:
 	void addObject(GLfloat* vertices, int vSize, GLuint* indices, int iSize, GLuint& vbo, GLuint& vao, GLuint& ebo);
 	void addObjectWithNormals(std::vector<GLfloat>& data, GLuint& vao);
 	void addObjectWithTangents(std::vector<GLfloat>& data, GLuint & vao);
-	void addObjectToScene(sceneobj& obj);
-	void addObjectsToScene(sceneobj* obj, size_t size);
+	void addObjectToScene(sceneobj* obj);
+	void addObjectsToScene(sceneobj** obj, size_t size);
 	Shader* addShader(const char* vertex, const char* fragment);
 	void addLine(glm::vec3 start, glm::vec3 direction, float length = 100.f);
 
@@ -142,7 +144,7 @@ private:
 	glm::ivec2 m_size;
 	std::vector<GLuint> m_vbo, m_vao;
 	std::vector<Shader*> m_shaders;
-	std::vector<sceneobj> m_scene;
+	std::vector<sceneobj*> m_scene;
 	glm::mat4 m_projection;
 	glm::vec2 mouse;
 	camera m_camera;
@@ -169,8 +171,8 @@ private:
 	void i_initShadow();
 	GLuint i_generateMultiSampleTexture(GLuint samples);
 	void i_generateNewFrameBuffer();
-	kdNode* i_kdTree(int axis);
-	float i_findMedian(int axis);
+	kdNode* i_kdTree(int axis, std::vector<sceneobj*> objects);
+	float i_findMedian(int axis, std::vector<sceneobj*> objects);
 };
 
 void glHandleError(const char* info = "");

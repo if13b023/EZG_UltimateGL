@@ -234,12 +234,60 @@ void FishGL::Run()
 
 void FishGL::calcKdTree()
 {
-	m_kdRoot = i_kdTree(0);
+	std::vector<sceneobj*> treeScene(m_scene);
+	m_kdRoot = i_kdTree(0, treeScene);
 }
 
-kdNode * FishGL::i_kdTree(int axis)
+kdNode * FishGL::i_kdTree(int axis, std::vector<sceneobj*> objects)
 {
-	return nullptr;
+	kdNode* newNode = new kdNode();
+	if (objects.size() == 1)
+	{
+		newNode->left = newNode->right = nullptr;
+		newNode->leaf = objects[0];
+		return newNode;
+	}
+	else if (objects.size() > 1)
+	{
+		newNode->axis = axis;
+		newNode->leaf = nullptr;
+		newNode->value = i_findMedian(axis, objects);
+		std::vector<sceneobj*> leftTree, rightTree;
+		for (sceneobj* s : objects)
+		{
+			if (s->origin[axis] < newNode->value)
+			{
+				leftTree.push_back(s);
+			}
+			else if (s->origin[axis] > newNode->value)
+			{
+				rightTree.push_back(s);
+			}
+			else
+				std::cout << "MEH!\n";
+
+		}
+
+		newNode->left = i_kdTree((axis < 2) ? axis + 1 : 0, leftTree);
+		newNode->right = i_kdTree((axis < 2) ? axis + 1 : 0, rightTree);
+
+		return newNode;
+	}else
+		return nullptr;
+}
+
+float FishGL::i_findMedian(int axis, std::vector<sceneobj*> objects)
+{
+	float mean(0.f);
+
+	for (sceneobj* so : objects)
+	{
+		mean += so->origin[axis];
+	}
+
+	mean /= objects.size();
+
+	return mean;
 }
 
 void FishGL::key_callback(int key, int action)
@@ -462,12 +510,12 @@ glm::mat4 FishGL::getPerspective() const
 	return m_projection;
 }
 
-void FishGL::addObjectToScene(sceneobj & obj)
+void FishGL::addObjectToScene(sceneobj* obj)
 {
 	m_scene.push_back(obj);
 }
 
-void FishGL::addObjectsToScene(sceneobj* obj, size_t size)
+void FishGL::addObjectsToScene(sceneobj** obj, size_t size)
 {
 	for(int i = 0; i < size; ++i)
 		m_scene.push_back(obj[i]);
@@ -640,7 +688,7 @@ void FishGL::addLine(glm::vec3 start, glm::vec3 direction, float length)
 	};
 
 	addObject(vertices, 6, line->VAO);
-	addObjectToScene(*line);
+	addObjectToScene(line);
 }
 
 void FishGL::calcTangents(glm::vec3 * vert, glm::vec2 * uv, glm::vec3 & t)
@@ -678,7 +726,7 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 			//if (i % 5 == 0)
 				//shader = m_lineShader;
 			//else
-				shader = m_scene[i].shader;
+				shader = m_scene[i]->shader;
 			//shader = m_shaders[0];
 		}
 		else
@@ -688,7 +736,7 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 		if (!isShadow/* && false*/)
 		{
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, m_scene[i].texture);
+			glBindTexture(GL_TEXTURE_2D, m_scene[i]->texture);
 			glUniform1i(glGetUniformLocation(shader->Program, "mainTexture"), 0);
 
 			glActiveTexture(GL_TEXTURE1);
@@ -696,33 +744,33 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 			glUniform1i(glGetUniformLocation(shader->Program, "depthMap"), 1);
 
 			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_2D, m_scene[i].normal);
+			glBindTexture(GL_TEXTURE_2D, m_scene[i]->normal);
 			glUniform1i(glGetUniformLocation(shader->Program, "normalMap"), 2);
 
 			glUniform1i(glGetUniformLocation(shader->Program, "shadowSwitch"), m_shadowSwitch);
 			glUniform1f(glGetUniformLocation(shader->Program, "normalFactor"), m_normalFactor);
 
-			glUniform3f(glGetUniformLocation(shader->Program, "objColor"), m_scene[i].color.r, m_scene[i].color.g, m_scene[i].color.b);
+			glUniform3f(glGetUniformLocation(shader->Program, "objColor"), m_scene[i]->color.r, m_scene[i]->color.g, m_scene[i]->color.b);
 			glUniform3f(glGetUniformLocation(shader->Program, "lightColor"), 1.0f, 1.0f, 1.0f);
 			glUniform3fv(glGetUniformLocation(shader->Program, "lightPos"), 1, &m_light.position[0]);
-			glUniform3fv(glGetUniformLocation(m_scene[i].shader->Program, "viewPos"), 1, &m_camera.position[0]);
-			glUniformMatrix4fv(glGetUniformLocation(m_scene[i].shader->Program, "view"), 1, GL_FALSE, glm::value_ptr(m_view));
+			glUniform3fv(glGetUniformLocation(m_scene[i]->shader->Program, "viewPos"), 1, &m_camera.position[0]);
+			glUniformMatrix4fv(glGetUniformLocation(m_scene[i]->shader->Program, "view"), 1, GL_FALSE, glm::value_ptr(m_view));
 		}
 
 		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "lightMatrix"), 1, GL_FALSE, glm::value_ptr(lightMatrix));
 
-		glBindVertexArray(m_scene[i].VAO);
+		glBindVertexArray(m_scene[i]->VAO);
 
 		glm::mat4 transform;
-		transform = glm::translate(transform, m_scene[i].position);
-		transform = glm::scale(transform, glm::vec3(m_scene[i].scale));
+		transform = glm::translate(transform, m_scene[i]->position);
+		transform = glm::scale(transform, glm::vec3(m_scene[i]->scale));
 
 		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
 		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "projection"), 1, GL_FALSE, glm::value_ptr(m_projection));
-		if(m_scene[i].iCount == 6)
-			glDrawArrays(GL_LINES, 0, m_scene[i].iCount);
+		if(m_scene[i]->iCount == 6)
+			glDrawArrays(GL_LINES, 0, m_scene[i]->iCount);
 		else
-			glDrawArrays(GL_TRIANGLES, 0, m_scene[i].iCount);
+			glDrawArrays(GL_TRIANGLES, 0, m_scene[i]->iCount);
 
 		glBindVertexArray(0);
 	}
@@ -795,10 +843,16 @@ void glHandleError(const char* info)
 void sceneobj::calcOrigin()
 {
 	glm::vec3 o;
-	for (int i = 0; i < meshPtr->data.size(); i++)
+	for (int i = 0; i < meshPtr->data.size(); i+=3)
 	{
-		o +=(meshPtr->data[i]/meshPtr->data.size());
+		o[0] += meshPtr->data[i + 0];
+		o[1] += meshPtr->data[i + 1];
+		o[2] += meshPtr->data[i + 2];
 	}
+	
+	o.x /= meshPtr->data.size();
+	o.y /= meshPtr->data.size();
+	o.z /= meshPtr->data.size();
 	origin = o;
 	std::cout << "origin for " << meshPtr->name << ": " << o.x << "|" << o.y << "|" << o.z << std::endl;
 }

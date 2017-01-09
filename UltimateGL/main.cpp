@@ -185,28 +185,28 @@ int main(int argc, char* argv[])
 	Shader* test_shader = engine.addShader("VertexShader.glsl", "FragmentShader_Emission.glsl");
 
 	short dist = 5;
-	std::vector<sceneobj> scene;
-	scene.resize(objects.size());
-
+	std::vector<sceneobj*> scene;
+	scene.reserve(objects.size());
 	//
 
 	for (GLuint i = 0; i < objects.size(); i++)
 	{
+		scene.push_back(new sceneobj());
 		//scene[i].VAO = VAO;
 		//engine.addObject(attrib.vertices.data(), attrib.vertices.size(), objects[i].indices, objects[i].size, VBO, scene[i].VAO, scene[i].EBO);
 		//engine.addObjectWithNormals(objects[i].data, scene[i].VAO);
-		engine.addObjectWithTangents(objects[i].data, scene[i].VAO);
-		scene[i].iCount = objects[i].data.size() / 8;
-		scene[i].scale = 0.5f;
-		//scene[i].shader = (rand() % 2 == 0) ? main_shader : test_shader;
-		scene[i].shader = main_shader;
-		//scene[i].position = glm::vec3((rand() % dist) - dist / 2, (rand() % dist) - dist / 2, (rand() % dist) - dist / 2);
-		scene[i].position = glm::vec3(0, -2.0f, 0);
-		scene[i].texture = texture1;
-		scene[i].normal = normal;
-		scene[i].color = glm::vec3(1.0f, 1.f, 1.f);
-		scene[i].meshPtr = &(objects[i]);
-		scene[i].calcOrigin();
+		engine.addObjectWithTangents(objects[i].data, scene[i]->VAO);
+		scene[i]->iCount = objects[i].data.size() / 8;
+		scene[i]->scale = 0.5f;
+		//scene[i]->shader = (rand() % 2 == 0) ? main_shader : test_shader;
+		scene[i]->shader = main_shader;
+		//scene[i]->position = glm::vec3((rand() % dist) - dist / 2, (rand() % dist) - dist / 2, (rand() % dist) - dist / 2);
+		scene[i]->position = glm::vec3(0, -2.0f, 0);
+		scene[i]->texture = texture1;
+		scene[i]->normal = normal;
+		scene[i]->color = glm::vec3(1.0f, 1.f, 1.f);
+		scene[i]->meshPtr = &(objects[i]);
+		scene[i]->calcOrigin();
 	}
 	//*****
 
