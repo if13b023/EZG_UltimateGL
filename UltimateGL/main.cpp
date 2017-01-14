@@ -229,26 +229,26 @@ int main(int argc, char* argv[])
 		std::cout << "pos: " << frame[i].position.x << "|" << frame[i].position.y << "|" << frame[i].position.z << std::endl;
 	}*/
 
-	frame[0].position = glm::vec3(70.2145f, -35.0015f, -129.68f);
-	frame[0].rotation = glm::quat(0.963065f, 0.143812f, 0.225151f, 0.033621f);
-	frame[1].position = glm::vec3(23.5101f, -18.6689f, -92.4546f);
-	frame[1].rotation = glm::quat(0.970905f, 0.139213f, 0.192871f, 0.0276547f);
-	frame[2].position = glm::vec3(15.657f, -8.63422f, -47.8023f);
-	frame[2].rotation = glm::quat(0.995971f, 0.0637391f, -0.0629597f, -0.00402941f);
-	frame[3].position = glm::vec3(19.1488f, -6.00215f, -21.1694f);
-	frame[3].rotation = glm::quat(0.998466f, 0.0337955f, -0.0438342f, -0.00148386f);
-	frame[4].position = glm::vec3(19.1538f, -5.37055f, -0.728659f);
-	frame[4].rotation = glm::quat(0.998556f, -0.00373702f, 0.0535915f, -0.000200745f);
-	frame[5].position = glm::vec3(11.0216f, -4.84981f, 16.5689f);
-	frame[5].rotation = glm::quat(0.935015f, 0.0182557f, 0.35407f, 0.00691284f);
-	frame[6].position = glm::vec3(-4.20156f, -4.61827f, 27.8162f);
-	frame[6].rotation = glm::quat(0.871484f, -0.0193797f, 0.489921f, -0.0108949f);
-	frame[7].position = glm::vec3(-21.7111f, -6.11492f, 36.0732f);
-	frame[7].rotation = glm::quat(0.811914f, -0.0219187f, 0.583153f, -0.0157432f);
-	frame[8].position = glm::vec3(-40.3042f, -6.24003f, 38.6788f);
-	frame[8].rotation = glm::quat(0.645806f, 0.0046985f, 0.763466f, 0.00555424f);
-	frame[9].position = glm::vec3(-59.6454f, -7.27606f, 27.9539f);
-	frame[9].rotation = glm::quat(0.380602f, -0.0175506f, 0.923591f, -0.0425896f);
+	frame[0].position = glm::vec3(-8.30853f, 3.05011f, 1.5966f);
+	frame[0].rotation = glm::quat(0.301561f, -0.010715f, 0.952786f, -0.0338539f);
+	frame[1].position = glm::vec3(-5.53763f, 3.06814f, 4.42721f);
+	frame[1].rotation = glm::quat(0.493492f, 0.0182703f, 0.868963f, 0.0321713f);
+	frame[2].position = glm::vec3(-1.52548f, 2.4424f, 5.74578f);
+	frame[2].rotation = glm::quat(0.654132f, 0.076869f, 0.747322f, 0.08782f);
+	frame[3].position = glm::vec3(2.2084f, 1.21507f, 5.3302f);
+	frame[3].rotation = glm::quat(0.825496f, 0.145509f, 0.53705f, 0.0946649f);
+	frame[4].position = glm::vec3(4.86051f, 0.170377f, 2.86173f);
+	frame[4].rotation = glm::quat(0.938458f, 0.107891f, 0.325963f, 0.0374747f);
+	frame[5].position = glm::vec3(6.59778f, -0.287681f, -1.6676f);
+	frame[5].rotation = glm::quat(0.997986f, -0.0579962f, -0.0256593f, 0.00149121f);
+	frame[6].position = glm::vec3(5.33945f, 0.63067f, -5.61334f);
+	frame[6].rotation = glm::quat(0.94542f, -0.145819f, -0.288001f, 0.0444206f);
+	frame[7].position = glm::vec3(1.41755f, 2.09333f, -8.68855f);
+	frame[7].rotation = glm::quat(0.804603f, -0.008478f, -0.59372f, 0.00625599f);
+	frame[8].position = glm::vec3(-2.90104f, 1.37972f, -8.81741f);
+	frame[8].rotation = glm::quat(0.528989f, 0.095956f, -0.829647f, -0.150494f);
+	frame[9].position = glm::vec3(-5.34199f, -0.193141f, -5.30862f);
+	frame[9].rotation = glm::quat(0.0597976f, 0.00536179f, -0.994208f, -0.0891456f);
 
 	anim.frames = frame;
 

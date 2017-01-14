@@ -182,8 +182,8 @@ void FishGL::Run()
 			glm::quat rot;
 
 			runAnimation(pos, rot);
-			m_camera.position = -pos;
-			m_camera.rotation = rot;
+			m_camera.position = pos;
+			m_camera.rotation = -rot;
 			m_view = glm::toMat4(m_camera.rotation) * glm::translate(m_view, -m_camera.position);
 		}
 		//keyboard events
@@ -309,7 +309,7 @@ void FishGL::key_callback(int key, int action)
 				std::cout << "frame[" << anim_count << "].position = glm::vec3(" << m_camera.position.x << "f, " << m_camera.position.y << "f, " << m_camera.position.z << "f);" << std::endl;
 				std::cout << "frame[" << anim_count << "].rotation = glm::quat(" << m_camera.rotation.w << "f, " << m_camera.rotation.x << "f, " << m_camera.rotation.y << "f, " << m_camera.rotation.z << "f);" << std::endl;
 				m_animation->frames[anim_count].position = m_camera.position;
-				m_animation->frames[anim_count].rotation = glm::normalize(m_camera.rotation);
+				m_animation->frames[anim_count].rotation = m_camera.rotation;
 				anim_count++;
 				if (anim_count == 10)
 					anim_count = 0;
@@ -580,7 +580,8 @@ void FishGL::runAnimation(glm::vec3 & pos, glm::quat & rot)
 	glm::quat rot_int1 = glm::intermediate(rots[0], rots[1], rots[2]);
 	glm::quat rot_int2 = glm::intermediate(rots[1], rots[2], rots[3]);
 	rot = glm::squad(rots[1], rots[2], rot_int1, rot_int2, glm::fract(percent));
-	//rot = glm::normalize(glm::lerp(rots[1], rots[2], glm::fract(percent)));
+	//rot = glm::mix(rots[1], rots[2], glm::fract(percent));
+	//rot = glm::lerp(rots[1], rots[2], glm::fract(percent));
 	//***
 }
 
