@@ -22,15 +22,6 @@
 
 #define DEBUG(x) std::cout << #x << " = " << x << std::endl;
 
-//struct renderObj {
-//	renderObj()
-//		: VAO(0), textureID(0), iCount(0)
-//	{};
-//	GLuint VAO;
-//	int iCount;
-//	GLuint textureID;
-//};
-
 struct Mesh
 {
 	std::string name;
@@ -103,7 +94,6 @@ struct kdNode {
 	BoundingBox bbox;
 	kdNode* left;
 	kdNode* right;
-	//kdNode* parent;
 	std::vector<int> leaf;
 
 	void calcBoundingBox(std::vector<int>& triangleIDs, std::vector<Triangle>& triangles);

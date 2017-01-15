@@ -40,7 +40,6 @@ GLFWwindow * FishGL::createWindow(int width, int height)
 	//AntiAliasing
 	if (m_AA)
 	{
-		//glfwWindowHint(GLFW_SAMPLES, m_AASamples);
 		glEnable(GL_MULTISAMPLE);
 	}else
 		glDisable(GL_MULTISAMPLE);
@@ -50,9 +49,7 @@ GLFWwindow * FishGL::createWindow(int width, int height)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-	//int monitorSize;
-	//GLFWmonitor** monitors = glfwGetMonitors(&monitorSize);
-	m_window = glfwCreateWindow(width, height, "LearnOpenGL", nullptr, nullptr);
+	m_window = glfwCreateWindow(width, height, "FishGL", nullptr, nullptr);
 	if (m_window == nullptr)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -206,7 +203,6 @@ void FishGL::Run()
 
 		//color render
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
-		//glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 		glClearColor(0.69f, 0.69f, 0.69f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		i_renderScene(m_scene, m_view);
@@ -214,17 +210,6 @@ void FishGL::Run()
 		//render debug scene
 		if(m_debug)
 			i_renderScene(m_debugScene, m_view);
-
-		//draw line
-		/*
-		if (m_lineVerts != nullptr)
-		{
-			glGetError();
-			m_lineShader->Use();
-			glVertexPointer(6, GL_FLOAT, 0, m_lineVerts);
-			std::cout << glGetError() << std::endl;
-			glDrawArrays(GL_LINES, 0, 2);
-		}*/
 
 		//if(m_drawAnimation && false)
 		//	drawAnimation(m_view);
@@ -373,14 +358,6 @@ void FishGL::key_callback(int key, int action)
 					}
 					else if (testShot && !node->leaf.empty())
 					{
-						/*for (int id : node->leaf)
-						{
-							float hit = m_triangles[id].isHit(m_camera.position, rayRay, 100.f);
-							if(hit > 0.f)
-								std::cout << "HIT@" << hit << " -> " << m_triangles[id].parentObj << std::endl;
-						}
-						break;*/
-
 						for (int id : node->leaf)
 						{
 							float hit = m_triangles[id].isHit(m_camera.position, rayRay, 100.f);
@@ -475,7 +452,6 @@ void FishGL::addObject(GLfloat * vertices, int vSize, GLuint & vao)
 	//CLEANUP
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	m_vao.push_back(vao);
 	m_vbo.push_back(vbo);
@@ -494,11 +470,6 @@ void FishGL::addObject(GLfloat* vertices, int vSize, GLuint* indices, int iSize,
 	// Position attribute
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (GLvoid*)0);
-
-	//EBO
-	//glGenBuffers(1, &ebo);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize * sizeof(GLuint), indices, GL_STATIC_DRAW);
 
 	//CLEANUP
 	glBindVertexArray(0);
@@ -573,10 +544,6 @@ void FishGL::addObjectWithTangents(std::vector<GLfloat>& data, GLuint & vao)
 Shader * FishGL::addShader(const char * vertex, const char * fragment)
 {
 	m_shaders.push_back(new Shader(vertex, fragment));
-	//m_shaders.back()->Use();
-
-	//glUniformMatrix4fv(m_shaders.back()->projId, 1, GL_FALSE, glm::value_ptr(m_projection));
-
 	return m_shaders.back();
 }
 
@@ -755,8 +722,6 @@ void FishGL::addLine(glm::vec3 start, glm::vec3 direction, float length)
 		line->scale = 1.0f;
 		line->simple = true;
 		line->triangles = false;
-		//m_lineId = m_scene.size();
-		//m_scene.push_back(*line);
 	}
 	else
 	{
@@ -789,8 +754,6 @@ void FishGL::addHit(glm::vec3 center, float size)
 		hit->simple = true;
 		hit->triangles = true;
 		hit->VAO = m_scene[0]->VAO;
-		//m_hitId = m_scene.size();
-		//m_scene.push_back(*hit);
 	}
 	else
 	{
@@ -844,11 +807,7 @@ void FishGL::i_renderScene(std::vector<sceneobj*>& scene, glm::mat4& m_view, boo
 		Shader* shader;
 		if (!isShadow)
 		{
-			//if (i % 5 == 0)
-				//shader = m_lineShader;
-			//else
-				shader = scene[i]->shader;
-			//shader = m_shaders[0];
+			shader = scene[i]->shader;
 		}
 		else
 			shader = m_shadow.shader;

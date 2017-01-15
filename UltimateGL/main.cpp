@@ -43,7 +43,6 @@ int main(int argc, char* argv[])
 
 	if(argc < 2)
 		ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "suzanne.obj");
-		//ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "scene4.obj");
 	else
 		ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, argv[1]);
 
@@ -119,7 +118,6 @@ int main(int argc, char* argv[])
 				// access to vertex
 				tinyobj::index_t idx = shapes[i].mesh.indices[index_offset + v];
 				unsigned int dataInd = dataIndOuter + (v * dataSize);
-				//int dataIndInt = (v*dataSize) + dataInd;
 
 				//Positions
 				objects[i].data[dataInd + 0] = attrib.vertices[3 * idx.vertex_index + 0];
@@ -193,7 +191,6 @@ int main(int argc, char* argv[])
 	}
 
 	Shader* main_shader = engine.addShader("VertexShader.glsl", "FragmentShader.glsl");
-	//Shader* test_shader = engine.addShader("VertexShader.glsl", "FragmentShader_Emission.glsl");
 
 	short dist = 5;
 	std::vector<sceneobj*> scene;
@@ -203,15 +200,10 @@ int main(int argc, char* argv[])
 	for (GLuint i = 0; i < objects.size(); i++)
 	{
 		scene.push_back(new sceneobj());
-		//scene[i].VAO = VAO;
-		//engine.addObject(attrib.vertices.data(), attrib.vertices.size(), objects[i].indices, objects[i].size, VBO, scene[i].VAO, scene[i].EBO);
-		//engine.addObjectWithNormals(objects[i].data, scene[i].VAO);
 		engine.addObjectWithTangents(objects[i].data, scene[i]->VAO);
 		scene[i]->iCount = objects[i].data.size() / 8;
 		scene[i]->scale = 1.f;
-		//scene[i]->shader = (rand() % 2 == 0) ? main_shader : test_shader;
 		scene[i]->shader = main_shader;
-		//scene[i]->position = glm::vec3((rand() % dist) - dist / 2, (rand() % dist) - dist / 2, (rand() % dist) - dist / 2);
 		scene[i]->position = glm::vec3(0, 0.0f, 0);
 		scene[i]->texture = texture1;
 		scene[i]->normal = normal;
@@ -232,16 +224,6 @@ int main(int argc, char* argv[])
 	anim.duration = 10.0f;
 	anim.count = size;
 	keyframe* frame = new keyframe[size];
-	/*for (int i = 0; i < size; ++i)
-	{
-		//frame[i].position = glm::vec3(glm::min(0, i - (size / 2)), 0, -glm::max(0, i - (size / 2)));
-		frame[i].position = glm::vec3(3 * sinf(i*5.0f / size * 3.1415f), 0, i);
-		if(i < size/2)
-			frame[i].rotation = glm::quat(glm::vec3(0, glm::radians(90.0f), 0));
-		else
-			frame[i].rotation = glm::quat(glm::vec3(0, glm::radians(160.0f), 0));
-		std::cout << "pos: " << frame[i].position.x << "|" << frame[i].position.y << "|" << frame[i].position.z << std::endl;
-	}*/
 
 	frame[0].position = glm::vec3(-8.30853f, 3.05011f, 1.5966f);
 	frame[0].rotation = glm::quat(0.301561f, -0.010715f, 0.952786f, -0.0338539f);
@@ -270,11 +252,6 @@ int main(int argc, char* argv[])
 	//****
 
 	engine.Run();
-
-	// Properly de-allocate all resources once they've outlived their purpose
-	/*glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);*/
 
 	glfwTerminate();
 
