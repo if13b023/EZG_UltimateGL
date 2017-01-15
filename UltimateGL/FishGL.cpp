@@ -22,6 +22,7 @@ FishGL::FishGL()
 	m_vbo.reserve(16);
 	m_camera.rotation = glm::quat(glm::vec3(0, glm::radians(0.0f), 0));
 	m_light.position = glm::vec3(0.f, 5.0f, 0.f);
+	m_light.color = glm::vec3(1.f, 1.0f, 1.f);
 
 	if (FT_Init_FreeType(&m_ftlib)) {
 		std::cout << "Could not init freetype library\n";
@@ -337,7 +338,7 @@ void FishGL::key_callback(int key, int action)
 				glm::vec3 rayRay = glm::vec3(0, 0, -1.f) * m_camera.rotation;
 				addLine(m_camera.position, rayRay);
 
-				Triangle* closestT = nullptr;
+				/*Triangle* closestT = nullptr;
 				float closest = HUGE_VALF;
 				for (Triangle& t : m_triangles)
 				{
@@ -350,9 +351,9 @@ void FishGL::key_callback(int key, int action)
 							closestT = &t;
 						}
 					}
-				}
+				}*/
 
-				/*Triangle* closestT = nullptr;
+				Triangle* closestT = nullptr;
 				float closest = HUGE_VALF;
 				bool testShot = false;
 				kdNode* node = m_kdRoot;
@@ -380,7 +381,7 @@ void FishGL::key_callback(int key, int action)
 						}
 						break;*/
 
-						/*for (int id : node->leaf)
+						for (int id : node->leaf)
 						{
 							float hit = m_triangles[id].isHit(m_camera.position, rayRay, 100.f);
 							if (hit > 0.f)
@@ -399,7 +400,7 @@ void FishGL::key_callback(int key, int action)
 						std::cout << "MISS...\n";
 						break;
 					}
-				} while (true);*/
+				} while (true);
 
 				if (closestT != nullptr)
 				{
@@ -430,23 +431,15 @@ void FishGL::key_callback(int key, int action)
 				DEBUG(m_fps);
 				break;
 
-			case GLFW_KEY_1: m_AASamples = 1;
+			case GLFW_KEY_1: m_AASamples = 2;
 				break;
-			case GLFW_KEY_2: m_AASamples = 2;
+			case GLFW_KEY_2: m_AASamples = 4;
 				break;
-			case GLFW_KEY_3: m_AASamples = 3;
+			case GLFW_KEY_3: m_AASamples = 8;
 				break;
-			case GLFW_KEY_4: m_AASamples = 4;
+			case GLFW_KEY_4: m_AASamples = 16;
 				break;
-			case GLFW_KEY_5: m_AASamples = 5;
-				break;
-			case GLFW_KEY_6: m_AASamples = 6;
-				break;
-			case GLFW_KEY_7: m_AASamples = 7;
-				break;
-			case GLFW_KEY_8: m_AASamples = 8;
-				break;
-			case GLFW_KEY_9: m_AASamples = 9;
+			case GLFW_KEY_5: m_AASamples = 32;
 				break;
 		}
 	}
@@ -883,7 +876,7 @@ void FishGL::i_renderScene(std::vector<sceneobj*>& scene, glm::mat4& m_view, boo
 			}
 
 			glUniform3f(glGetUniformLocation(shader->Program, "objColor"), scene[i]->color.r, scene[i]->color.g, scene[i]->color.b);
-			glUniform3f(glGetUniformLocation(shader->Program, "lightColor"), 1.0f, 1.0f, 1.0f);
+			glUniform3f(glGetUniformLocation(shader->Program, "lightColor"), m_light.color.r, m_light.color.g, m_light.color.b);
 			glUniform3fv(glGetUniformLocation(shader->Program, "lightPos"), 1, &m_light.position[0]);
 			glUniform3fv(glGetUniformLocation(scene[i]->shader->Program, "viewPos"), 1, &m_camera.position[0]);
 			glUniformMatrix4fv(glGetUniformLocation(scene[i]->shader->Program, "view"), 1, GL_FALSE, glm::value_ptr(m_view));

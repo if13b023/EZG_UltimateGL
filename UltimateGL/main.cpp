@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
 				glm::vec2 uv[3];
 
 				for (int o = 0; o < 3; ++o)
-			{
+				{
 					int indx = 11 * o;
 					vert[o].x = objects[i].data[j + indx + 0];
 					vert[o].y = objects[i].data[j + indx + 1];
