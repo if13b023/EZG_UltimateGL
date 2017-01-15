@@ -40,11 +40,14 @@ struct sceneobj {
 	bool simple, triangles;
 	GLuint texture;
 	GLuint normal;
+	Mesh* meshPtr;
 
 	bool operator < (const sceneobj& t) const
 	{
 		return (dist < t.dist);
 	}
+
+	void calcOrigin();
 };
 
 struct keyframe {

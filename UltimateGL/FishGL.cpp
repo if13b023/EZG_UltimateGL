@@ -381,7 +381,7 @@ void FishGL::key_callback(int key, int action)
 
 				if (closestT != nullptr)
 				{
-					addHit(m_camera.position + (rayRay * closest), 1.0f);
+					addHit(m_camera.position + (rayRay * closest), .1f);
 					addLine(m_camera.position, rayRay, closest);
 					std::cout << "HIT@" << closest << " -> " << closestT->parentObj << std::endl;
 				}
@@ -750,6 +750,7 @@ void FishGL::addHit(glm::vec3 center, float size)
 		hit = new sceneobj();
 		hit->shader = m_shaders[0];
 		hit->iCount = m_scene[0]->iCount;
+		hit->origin = m_scene[0]->origin;
 		hit->color = glm::vec3(0.f, 1.f, 1.f);
 		hit->simple = true;
 		hit->triangles = true;
@@ -760,8 +761,8 @@ void FishGL::addHit(glm::vec3 center, float size)
 		hit = m_debugScene[m_hitId];
 	}
 
-	hit->position = center;
 	hit->scale = size;
+	hit->position = center - (hit->origin * hit->scale);
 
 	if (m_hitId == -1)
 	{
@@ -1024,4 +1025,22 @@ bool kdNode::isHit(glm::vec3 rOrigin, glm::vec3 rDirection, float length)
 		tMax = tzMax;
 
 	return ((tMin < length) && (tMax > 0));
+}
+
+void sceneobj::calcOrigin()
+{
+	glm::vec3 o;
+	int vertexCnt = 0;
+	for (int i = 0; i < meshPtr->data.size(); i += 11)
+	{
+		vertexCnt++;
+		o[0] += meshPtr->data[i + 0];
+		o[1] += meshPtr->data[i + 1];
+		o[2] += meshPtr->data[i + 2];
+	}
+
+	o.x /= vertexCnt;
+	o.y /= vertexCnt;
+	o.z /= vertexCnt;
+	origin = o;
 }
