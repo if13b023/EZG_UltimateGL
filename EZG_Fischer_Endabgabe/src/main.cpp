@@ -13,7 +13,7 @@
 
 #include <iostream>
 #include <random>
-//#include "FileIO.h"
+#include "FileIO.h"
 #include "Shader.h"
 #include "FishGL.h"
 
