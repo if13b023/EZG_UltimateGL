@@ -260,7 +260,7 @@ kdNode * FishGL::i_kdTree(int axis, std::vector<int> objects)
 			{
 				leftTree.push_back(t);
 			}
-			else if (m_triangles[t].median[axis] > newNode->value)
+			else if (m_triangles[t].median[axis] >= newNode->value)
 			{
 				rightTree.push_back(t);
 			}
