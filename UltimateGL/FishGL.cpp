@@ -12,7 +12,9 @@ FishGL::FishGL()
 	m_normalFactor(.5f),
 	m_AA(false),
 	m_AASamples(1),
-	m_lineVerts(nullptr)
+	m_lineId(-1),
+	m_hitId(-1),
+	m_debug(true)
 {
 	glfwInit();
 	m_shaders.reserve(16);
@@ -196,7 +198,7 @@ void FishGL::Run()
 		glViewport(0, 0, m_shadow.size, m_shadow.size);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_shadow.depthFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		i_renderScene(m_view, true);
+		i_renderScene(m_scene, m_view, true);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, m_size.x, m_size.y); //reset viewport
 
@@ -206,7 +208,11 @@ void FishGL::Run()
 		//glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 		glClearColor(0.69f, 0.69f, 0.69f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		i_renderScene(m_view);
+		i_renderScene(m_scene, m_view);
+
+		//render debug scene
+		if(m_debug)
+			i_renderScene(m_debugScene, m_view);
 
 		//draw line
 		/*
@@ -235,38 +241,45 @@ void FishGL::Run()
 
 void FishGL::calcKdTree()
 {
-	std::vector<sceneobj*> treeScene(m_scene);
+	std::vector<int> treeScene;
+	treeScene.resize(m_triangles.size());
+	for (int i = 0; i < m_triangles.size(); ++i)
+	{
+		treeScene[i] = i;
+	}
+	
 	m_kdRoot = i_kdTree(0, treeScene);
 }
 
-kdNode * FishGL::i_kdTree(int axis, std::vector<sceneobj*> objects)
+kdNode * FishGL::i_kdTree(int axis, std::vector<int> objects)
 {
 	kdNode* newNode = new kdNode();
-	if (objects.size() == 1)
+
+	newNode->calcBoundingBox(objects, m_triangles);
+
+	if (objects.size() <= 12)//break if one cube fits into the leaf
 	{
 		newNode->left = newNode->right = nullptr;
-		newNode->leaf = objects[0];
+		newNode->leaf = objects;
 		return newNode;
 	}
-	else if (objects.size() > 1)
+	else if (objects.size() > 12)
 	{
 		newNode->axis = axis;
-		newNode->leaf = nullptr;
 		newNode->value = i_findMedian(axis, objects);
-		std::vector<sceneobj*> leftTree, rightTree;
-		for (sceneobj* s : objects)
+		std::vector<int> leftTree, rightTree;
+		for (int t : objects)
 		{
-			if (s->origin[axis] < newNode->value)
+			if (m_triangles[t].median[axis] < newNode->value)
 			{
-				leftTree.push_back(s);
+				leftTree.push_back(t);
 			}
-			else if (s->origin[axis] > newNode->value)
+			else if (m_triangles[t].median[axis] > newNode->value)
 			{
-				rightTree.push_back(s);
+				rightTree.push_back(t);
 			}
 			else
 				std::cout << "MEH!\n";
-
 		}
 
 		newNode->left = i_kdTree((axis < 2) ? axis + 1 : 0, leftTree);
@@ -277,13 +290,13 @@ kdNode * FishGL::i_kdTree(int axis, std::vector<sceneobj*> objects)
 		return nullptr;
 }
 
-float FishGL::i_findMedian(int axis, std::vector<sceneobj*> objects)
+float FishGL::i_findMedian(int axis, std::vector<int> objects)
 {
 	float mean(0.f);
 
-	for (sceneobj* so : objects)
+	for (int t : objects)
 	{
-		mean += so->origin[axis];
+		mean += m_triangles[t].median[axis];
 	}
 
 	mean /= objects.size();
@@ -321,10 +334,81 @@ void FishGL::key_callback(int key, int action)
 			{
 				std::cout << "Camera Position: " << m_camera.position.x << "|" << m_camera.position.y << "|" << m_camera.position.z << std::endl;
 				std::cout << m_camera.rotation.y << "|" << m_camera.rotation.y << "|" << m_camera.rotation.z << std::endl;
-				glm::quat rayRot(m_camera.rotation);
-				//rayRot = glm::rotate(rayRot, glm::vec3(0, 90, 0));
-				glm::vec3 rayRay(rayRot.x, rayRot.y, rayRot.z);
+				glm::vec3 rayRay = glm::vec3(0, 0, -1.f) * m_camera.rotation;
 				addLine(m_camera.position, rayRay);
+
+				Triangle* closestT = nullptr;
+				float closest = HUGE_VALF;
+				for (Triangle& t : m_triangles)
+				{
+					float hit = t.isHit(m_camera.position, rayRay, 100.f);
+					if (hit > 0.f)
+					{
+						if (hit < closest)
+						{
+							closest = hit;
+							closestT = &t;
+						}
+					}
+				}
+
+				/*Triangle* closestT = nullptr;
+				float closest = HUGE_VALF;
+				bool testShot = false;
+				kdNode* node = m_kdRoot;
+				do{
+					testShot = node->isHit(m_camera.position, rayRay, 100.f);
+					if (testShot && node->leaf.empty())
+					{
+						if (node->left->isHit(m_camera.position, rayRay, 100.f))
+							node = node->left;
+						else if (node->right->isHit(m_camera.position, rayRay, 100.f))
+							node = node->right;
+						else
+						{
+							std::cout << "WAT!?\n";
+							break;
+						}
+					}
+					else if (testShot && !node->leaf.empty())
+					{
+						/*for (int id : node->leaf)
+						{
+							float hit = m_triangles[id].isHit(m_camera.position, rayRay, 100.f);
+							if(hit > 0.f)
+								std::cout << "HIT@" << hit << " -> " << m_triangles[id].parentObj << std::endl;
+						}
+						break;*/
+
+						/*for (int id : node->leaf)
+						{
+							float hit = m_triangles[id].isHit(m_camera.position, rayRay, 100.f);
+							if (hit > 0.f)
+							{
+								if (hit < closest)
+								{
+									closest = hit;
+									closestT = &m_triangles[id];
+								}
+							}
+						}
+						break;
+					}
+					else
+					{
+						std::cout << "MISS...\n";
+						break;
+					}
+				} while (true);*/
+
+				if (closestT != nullptr)
+				{
+					addHit(m_camera.position + (rayRay * closest), 1.0f);
+					addLine(m_camera.position, rayRay, closest);
+					std::cout << "HIT@" << closest << " -> " << closestT->parentObj << std::endl;
+				}
+				else
+					std::cout << "MISS\n";
 			}
 				break;
 			case GLFW_KEY_Z:
@@ -419,9 +503,9 @@ void FishGL::addObject(GLfloat* vertices, int vSize, GLuint* indices, int iSize,
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (GLvoid*)0);
 
 	//EBO
-	glGenBuffers(1, &ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize * sizeof(GLuint), indices, GL_STATIC_DRAW);
+	//glGenBuffers(1, &ebo);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize * sizeof(GLuint), indices, GL_STATIC_DRAW);
 
 	//CLEANUP
 	glBindVertexArray(0);
@@ -668,21 +752,23 @@ glm::vec3* FishGL::getAnimation(int resolution)
 void FishGL::addLine(glm::vec3 start, glm::vec3 direction, float length)
 {
 	sceneobj* line;
-	//if (m_lineId == -1)
-	//{
+	if (m_lineId == -1)
+	{
 		line = new sceneobj();
 		line->shader = m_shaders[0];
 		line->iCount = 6;
 		line->color = glm::vec3(0.f, 0.f, 1.f);
 		line->position = glm::vec3(0.f, 0.f, 0.f);
 		line->scale = 1.0f;
+		line->simple = true;
+		line->triangles = false;
 		//m_lineId = m_scene.size();
 		//m_scene.push_back(*line);
-	/*}
+	}
 	else
 	{
-		line = &m_scene[m_lineId];
-	}*/
+		line = m_debugScene[m_lineId];
+	}
 
 	glm::vec3 end = start + (direction * length);
 	GLfloat vertices[] = {
@@ -691,7 +777,46 @@ void FishGL::addLine(glm::vec3 start, glm::vec3 direction, float length)
 	};
 
 	addObject(vertices, 6, line->VAO);
-	addObjectToScene(line);
+	if (m_lineId == -1)
+	{
+		m_debugScene.push_back(line);
+		m_lineId = m_debugScene.size() - 1;
+	}
+}
+
+void FishGL::addHit(glm::vec3 center, float size)
+{
+	sceneobj* hit;
+	if (m_hitId == -1)
+	{
+		hit = new sceneobj();
+		hit->shader = m_shaders[0];
+		hit->iCount = m_scene[0]->iCount;
+		hit->color = glm::vec3(0.f, 1.f, 1.f);
+		hit->simple = true;
+		hit->triangles = true;
+		hit->VAO = m_scene[0]->VAO;
+		//m_hitId = m_scene.size();
+		//m_scene.push_back(*hit);
+	}
+	else
+	{
+		hit = m_debugScene[m_hitId];
+	}
+
+	hit->position = center;
+	hit->scale = size;
+
+	if (m_hitId == -1)
+	{
+		m_debugScene.push_back(hit);
+		m_hitId = m_debugScene.size() - 1;
+	}
+}
+
+void FishGL::addTriangles(std::vector<Triangle>& triangles)
+{
+	m_triangles = triangles;
 }
 
 void FishGL::calcTangents(glm::vec3 * vert, glm::vec2 * uv, glm::vec3 & t)
@@ -712,7 +837,7 @@ void FishGL::calcTangents(glm::vec3 * vert, glm::vec2 * uv, glm::vec3 & t)
 	t = glm::normalize(t);
 }
 
-void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
+void FishGL::i_renderScene(std::vector<sceneobj*>& scene, glm::mat4& m_view, bool isShadow)
 {
 	GLfloat near_plane = 1.0f, far_plane = 20.0f;
 	glm::mat4 lightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, near_plane, far_plane);
@@ -721,7 +846,7 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 		glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 lightMatrix = lightProjection * lightView;
 
-	for (GLuint i = 0; i < m_scene.size(); i++)
+	for (GLuint i = 0; i < scene.size(); i++)
 	{
 		Shader* shader;
 		if (!isShadow)
@@ -729,7 +854,7 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 			//if (i % 5 == 0)
 				//shader = m_lineShader;
 			//else
-				shader = m_scene[i]->shader;
+				shader = scene[i]->shader;
 			//shader = m_shaders[0];
 		}
 		else
@@ -738,42 +863,46 @@ void FishGL::i_renderScene(glm::mat4& m_view, bool isShadow)
 		shader->Use();
 		if (!isShadow/* && false*/)
 		{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, m_scene[i]->texture);
-			glUniform1i(glGetUniformLocation(shader->Program, "mainTexture"), 0);
+			glUniform1i(glGetUniformLocation(shader->Program, "simple"), scene[i]->simple);
+			if (scene[i]->simple == false)
+			{
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, scene[i]->texture);
+				glUniform1i(glGetUniformLocation(shader->Program, "mainTexture"), 0);
 
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, m_shadow.depthTex);
-			glUniform1i(glGetUniformLocation(shader->Program, "depthMap"), 1);
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_2D, m_shadow.depthTex);
+				glUniform1i(glGetUniformLocation(shader->Program, "depthMap"), 1);
 
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_2D, m_scene[i]->normal);
-			glUniform1i(glGetUniformLocation(shader->Program, "normalMap"), 2);
+				glActiveTexture(GL_TEXTURE2);
+				glBindTexture(GL_TEXTURE_2D, scene[i]->normal);
+				glUniform1i(glGetUniformLocation(shader->Program, "normalMap"), 2);
 
-			glUniform1i(glGetUniformLocation(shader->Program, "shadowSwitch"), m_shadowSwitch);
-			glUniform1f(glGetUniformLocation(shader->Program, "normalFactor"), m_normalFactor);
+				glUniform1i(glGetUniformLocation(shader->Program, "shadowSwitch"), m_shadowSwitch);
+				glUniform1f(glGetUniformLocation(shader->Program, "normalFactor"), m_normalFactor);
+			}
 
-			glUniform3f(glGetUniformLocation(shader->Program, "objColor"), m_scene[i]->color.r, m_scene[i]->color.g, m_scene[i]->color.b);
+			glUniform3f(glGetUniformLocation(shader->Program, "objColor"), scene[i]->color.r, scene[i]->color.g, scene[i]->color.b);
 			glUniform3f(glGetUniformLocation(shader->Program, "lightColor"), 1.0f, 1.0f, 1.0f);
 			glUniform3fv(glGetUniformLocation(shader->Program, "lightPos"), 1, &m_light.position[0]);
-			glUniform3fv(glGetUniformLocation(m_scene[i]->shader->Program, "viewPos"), 1, &m_camera.position[0]);
-			glUniformMatrix4fv(glGetUniformLocation(m_scene[i]->shader->Program, "view"), 1, GL_FALSE, glm::value_ptr(m_view));
+			glUniform3fv(glGetUniformLocation(scene[i]->shader->Program, "viewPos"), 1, &m_camera.position[0]);
+			glUniformMatrix4fv(glGetUniformLocation(scene[i]->shader->Program, "view"), 1, GL_FALSE, glm::value_ptr(m_view));
 		}
 
 		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "lightMatrix"), 1, GL_FALSE, glm::value_ptr(lightMatrix));
 
-		glBindVertexArray(m_scene[i]->VAO);
+		glBindVertexArray(scene[i]->VAO);
 
 		glm::mat4 transform;
-		transform = glm::translate(transform, m_scene[i]->position);
-		transform = glm::scale(transform, glm::vec3(m_scene[i]->scale));
+		transform = glm::translate(transform, scene[i]->position);
+		transform = glm::scale(transform, glm::vec3(scene[i]->scale));
 
 		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
 		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "projection"), 1, GL_FALSE, glm::value_ptr(m_projection));
-		if(m_scene[i]->iCount == 6)
-			glDrawArrays(GL_LINES, 0, m_scene[i]->iCount);
+		if(scene[i]->triangles)
+			glDrawArrays(GL_TRIANGLES, 0, scene[i]->iCount);
 		else
-			glDrawArrays(GL_TRIANGLES, 0, m_scene[i]->iCount);
+			glDrawArrays(GL_LINES, 0, scene[i]->iCount);
 
 		glBindVertexArray(0);
 	}
@@ -843,19 +972,104 @@ void glHandleError(const char* info)
 	}
 }
 
-void sceneobj::calcOrigin()
+void Triangle::calcMedian()
 {
-	glm::vec3 o;
-	for (int i = 0; i < meshPtr->data.size(); i+=11)
+	glm::vec3 tmpMedian(0, 0, 0);
+	for (int i = 0; i < 3; ++i)
+		tmpMedian += vertices[i];
+	median = tmpMedian / 3.0f;
+}
+
+float Triangle::isHit(glm::vec3 rOrigin, glm::vec3 rDirection, float length)
+{
+	glm::vec3 e1, e2, h, s, q;
+	float a, f, u, v, t;
+	e1 = vertices[1] - vertices[0];
+	e2 = vertices[2] - vertices[0];
+
+	h = glm::cross(rDirection, e2);
+	a = glm::dot(e1, h);
+
+	if (a > -0.00001 && a < 0.00001)
+		return(false);
+
+	f = 1 / a;
+	s =rOrigin - vertices[0];
+	u = f * (glm::dot(s, h));
+
+	if (u < 0.0 || u > 1.0)
+		return(false);
+
+	q = glm::cross(s, e1);
+	v = f * glm::dot(rDirection, q);
+
+	if (v < 0.0 || u + v > 1.0)
+		return(false);
+
+	// at this stage we can compute t to find out where
+	// the intersection point is on the line
+	t = f * glm::dot(e2, q);
+
+	if (t > 0.f && t < length)
 	{
-		o[0] += meshPtr->data[i + 0];
-		o[1] += meshPtr->data[i + 1];
-		o[2] += meshPtr->data[i + 2];
+		return t;
 	}
-	
-	o.x /= meshPtr->data.size();
-	o.y /= meshPtr->data.size();
-	o.z /= meshPtr->data.size();
-	origin = o;
-	std::cout << "origin for " << meshPtr->name << ": " << o.x << "|" << o.y << "|" << o.z << std::endl;
+	return -1.f;
+}
+
+void kdNode::calcBoundingBox(std::vector<int>& triangleIDs, std::vector<Triangle>& triangles)
+{
+	for (int id : triangleIDs)
+	{
+		for (int i = 0; i < 3; ++i)
+		{
+			glm::vec3 vertex = triangles[id].vertices[i];
+			for (int axis = 0; axis < 3; ++axis)
+			{
+				bbox.min[axis] = std::min(bbox.min[axis], vertex[axis]);
+				bbox.max[axis] = std::max(bbox.max[axis], vertex[axis]);
+			}
+		}
+	}
+}
+
+bool kdNode::isHit(glm::vec3 rOrigin, glm::vec3 rDirection, float length)
+{
+	float tMin = (bbox.min.x - rOrigin.x) / rDirection.x;
+	float tMax = (bbox.max.x - rOrigin.x) / rDirection.x;
+
+	if (tMin > tMax)
+		std::swap(tMin, tMax);
+
+	float tyMin = (bbox.min.y - rOrigin.y) / rDirection.y;
+	float tyMax = (bbox.max.y - rOrigin.y) / rDirection.y;
+
+	if (tyMin > tyMax)
+		std::swap(tyMin, tyMax);
+
+	if ((tMin > tyMax) || (tyMin > tMax))
+		return false;
+
+	if (tyMin > tMin)
+		tMin = tyMin;
+
+	if (tyMax < tMax)
+		tMax = tyMax;
+
+	float tzMin = (bbox.min.z - rOrigin.z) / rDirection.z;
+	float tzMax = (bbox.max.z - rOrigin.z) / rDirection.z;
+
+	if (tzMin > tzMax)
+		std::swap(tzMin, tzMax);
+
+	if ((tMin > tzMax) || (tzMin > tMax))
+		return false;
+
+	if (tzMin > tMin)
+		tMin = tzMin;
+
+	if (tzMax < tMax)
+		tMax = tzMax;
+
+	return ((tMin < length) && (tMax > 0));
 }

@@ -46,16 +46,14 @@ struct sceneobj {
 	glm::vec3 origin;
 	float scale;
 	float dist;
+	bool simple, triangles;
 	GLuint texture;
 	GLuint normal;
-	Mesh* meshPtr;
 
 	bool operator < (const sceneobj& t) const
 	{
 		return (dist < t.dist);
 	}
-
-	void calcOrigin();
 };
 
 struct keyframe {
@@ -86,15 +84,30 @@ struct shadow {
 	Shader* shader;
 };
 
+struct BoundingBox {
+	glm::vec3 min, max;
+};
+
+struct Triangle {
+	glm::vec3 vertices[3];
+	glm::vec3 median;
+	std::string parentObj;
+
+	void calcMedian();
+	float isHit(glm::vec3 rOrigin, glm::vec3 rDirection, float length);
+};
+
 struct kdNode {
 	int axis;
 	float value;
-	glm::vec3 center;
-	glm::vec3 boundingBox;
+	BoundingBox bbox;
 	kdNode* left;
 	kdNode* right;
 	//kdNode* parent;
-	sceneobj* leaf;
+	std::vector<int> leaf;
+
+	void calcBoundingBox(std::vector<int>& triangleIDs, std::vector<Triangle>& triangles);
+	bool isHit(glm::vec3 rOrigin, glm::vec3 rDirection, float length);
 };
 
 class FishGL
@@ -120,6 +133,8 @@ public:
 	void addObjectsToScene(sceneobj** obj, size_t size);
 	Shader* addShader(const char* vertex, const char* fragment);
 	void addLine(glm::vec3 start, glm::vec3 direction, float length = 100.f);
+	void addHit(glm::vec3 center, float size);
+	void addTriangles(std::vector<Triangle>& triangles);
 
 	//animation
 	void addAnimation(animation* anim);
@@ -135,7 +150,7 @@ public:
 	glm::mat4 getPerspective() const;
 
 private:
-	bool m_shadowSwitch, m_AA;
+	bool m_shadowSwitch, m_AA, m_debug;
 	int m_AASamples;
 	float m_normalFactor,
 			m_fps;
@@ -145,6 +160,7 @@ private:
 	std::vector<GLuint> m_vbo, m_vao;
 	std::vector<Shader*> m_shaders;
 	std::vector<sceneobj*> m_scene;
+	std::vector<sceneobj*> m_debugScene;
 	glm::mat4 m_projection;
 	glm::vec2 mouse;
 	camera m_camera;
@@ -161,18 +177,20 @@ private:
 	shadow m_shadow;
 	FT_Library m_ftlib;
 	kdNode* m_kdRoot;
+	std::vector<Triangle> m_triangles;
 
 	//DEBUG
 	Shader* m_lineShader;
-	GLfloat* m_lineVerts;
+	int m_lineId, m_hitId;
+	GLuint m_lineVBO;
 
 	//internals
-	void i_renderScene(glm::mat4& view, bool isShadow = false);
+	void i_renderScene(std::vector<sceneobj*>& scene, glm::mat4& view, bool isShadow = false);
 	void i_initShadow();
 	GLuint i_generateMultiSampleTexture(GLuint samples);
 	void i_generateNewFrameBuffer();
-	kdNode* i_kdTree(int axis, std::vector<sceneobj*> objects);
-	float i_findMedian(int axis, std::vector<sceneobj*> objects);
+	kdNode* i_kdTree(int axis, std::vector<int> objects);
+	float i_findMedian(int axis, std::vector<int> objects);
 };
 
 void glHandleError(const char* info = "");

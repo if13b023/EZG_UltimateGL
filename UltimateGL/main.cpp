@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// Load, create texture and generate mipmaps
 	int width, height;
-	unsigned char* image = SOIL_load_image("blank.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+	unsigned char* image = SOIL_load_image("concrete2.jpg", &width, &height, 0, SOIL_LOAD_RGB);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	SOIL_free_image_data(image);
@@ -95,6 +95,8 @@ int main(int argc, char* argv[])
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	//sample preps
+	std::vector<Triangle> triangles;
+	triangles.reserve(16 * shapes.size());
 	std::vector<Mesh> objects;
 	objects.resize(shapes.size());
 	int dataSize = 8+3;
@@ -108,9 +110,12 @@ int main(int argc, char* argv[])
 		{
 			int fv = shapes[i].mesh.num_face_vertices[j];
 			unsigned int dataIndOuter = j * fv * (dataSize + 0);
+			Triangle tmpT;
+			tmpT.parentObj = shapes[i].name;
 
 			// Loop over vertices in the face.
-			for (size_t v = 0; v < fv; v++) {
+			for (size_t v = 0; v < fv; v++) 
+			{
 				// access to vertex
 				tinyobj::index_t idx = shapes[i].mesh.indices[index_offset + v];
 				unsigned int dataInd = dataIndOuter + (v * dataSize);
@@ -120,6 +125,9 @@ int main(int argc, char* argv[])
 				objects[i].data[dataInd + 0] = attrib.vertices[3 * idx.vertex_index + 0];
 				objects[i].data[dataInd + 1] = attrib.vertices[3 * idx.vertex_index + 1];
 				objects[i].data[dataInd + 2] = attrib.vertices[3 * idx.vertex_index + 2];
+
+				tmpT.vertices[v] = glm::vec3(objects[i].data[dataInd + 0], objects[i].data[dataInd + 1], objects[i].data[dataInd + 1]);
+
 				//Normals
 				objects[i].data[dataInd + 3] = attrib.normals[3 * idx.normal_index + 0];
 				objects[i].data[dataInd + 4] = attrib.normals[3 * idx.normal_index + 1];
@@ -141,6 +149,9 @@ int main(int argc, char* argv[])
 				objects[i].data[dataInd + 10] = 66.6f;
 			}
 			index_offset += fv;
+
+			tmpT.calcMedian();
+			triangles.push_back(tmpT);
 		}
 
 		//Insert Tangents
@@ -182,7 +193,7 @@ int main(int argc, char* argv[])
 	}
 
 	Shader* main_shader = engine.addShader("VertexShader.glsl", "FragmentShader.glsl");
-	Shader* test_shader = engine.addShader("VertexShader.glsl", "FragmentShader_Emission.glsl");
+	//Shader* test_shader = engine.addShader("VertexShader.glsl", "FragmentShader_Emission.glsl");
 
 	short dist = 5;
 	std::vector<sceneobj*> scene;
@@ -197,20 +208,23 @@ int main(int argc, char* argv[])
 		//engine.addObjectWithNormals(objects[i].data, scene[i].VAO);
 		engine.addObjectWithTangents(objects[i].data, scene[i]->VAO);
 		scene[i]->iCount = objects[i].data.size() / 8;
-		scene[i]->scale = 0.5f;
+		scene[i]->scale = 1.f;
 		//scene[i]->shader = (rand() % 2 == 0) ? main_shader : test_shader;
 		scene[i]->shader = main_shader;
 		//scene[i]->position = glm::vec3((rand() % dist) - dist / 2, (rand() % dist) - dist / 2, (rand() % dist) - dist / 2);
-		scene[i]->position = glm::vec3(0, -2.0f, 0);
+		scene[i]->position = glm::vec3(0, 0.0f, 0);
 		scene[i]->texture = texture1;
 		scene[i]->normal = normal;
-		scene[i]->color = glm::vec3(1.0f, 1.f, 1.f);
-		scene[i]->meshPtr = &(objects[i]);
-		scene[i]->calcOrigin();
+		scene[i]->color = glm::vec3(1.0f, 0.f, 0.f);
+		scene[i]->simple = false;
+		scene[i]->triangles = true;
 	}
 	//*****
 
 	engine.addObjectsToScene(scene.data(), objects.size());
+
+	engine.addTriangles(triangles);
+	engine.calcKdTree();
 
 	//Animation
 	animation anim;
