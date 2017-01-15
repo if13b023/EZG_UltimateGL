@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
 				objects[i].data[dataInd + 1] = attrib.vertices[3 * idx.vertex_index + 1];
 				objects[i].data[dataInd + 2] = attrib.vertices[3 * idx.vertex_index + 2];
 
-				tmpT.vertices[v] = glm::vec3(objects[i].data[dataInd + 0], objects[i].data[dataInd + 1], objects[i].data[dataInd + 1]);
+				tmpT.vertices[v] = glm::vec3(objects[i].data[dataInd + 0], objects[i].data[dataInd + 1], objects[i].data[dataInd + 2]);
 
 				//Normals
 				objects[i].data[dataInd + 3] = attrib.normals[3 * idx.normal_index + 0];

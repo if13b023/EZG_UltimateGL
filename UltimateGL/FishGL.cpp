@@ -323,7 +323,7 @@ void FishGL::key_callback(int key, int action)
 				glm::vec3 rayRay = glm::vec3(0, 0, -1.f) * m_camera.rotation;
 				addLine(m_camera.position, rayRay);
 
-				/*Triangle* closestT = nullptr;
+				Triangle* closestT = nullptr;
 				float closest = HUGE_VALF;
 				for (Triangle& t : m_triangles)
 				{
@@ -336,8 +336,8 @@ void FishGL::key_callback(int key, int action)
 							closestT = &t;
 						}
 					}
-				}*/
-
+				}
+/*
 				Triangle* closestT = nullptr;
 				float closest = HUGE_VALF;
 				bool testShot = false;
@@ -377,7 +377,7 @@ void FishGL::key_callback(int key, int action)
 						std::cout << "MISS...\n";
 						break;
 					}
-				} while (true);
+				} while (true);*/
 
 				if (closestT != nullptr)
 				{
