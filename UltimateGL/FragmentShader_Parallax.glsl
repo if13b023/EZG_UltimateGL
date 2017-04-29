@@ -83,8 +83,8 @@ void main()
 	vec3 norm = normalize(fs_in.TangentNormal);
 	
 	vec3 color = texture(mainTexture,  uvCoords).rgb;
-	if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
-		color = vec3(1.0, 0.0, 0.0);
+	//if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
+	//	color = vec3(1.0, 0.0, 0.0);
 	
 	// Ambient
 	float ambientStrength = 0.1;
