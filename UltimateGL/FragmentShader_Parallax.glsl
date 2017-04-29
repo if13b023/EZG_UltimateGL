@@ -23,34 +23,45 @@ uniform sampler2D normalMap;
 
 vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir)
 {
-	const float minLayers = 10;
-	const float maxLayers = 20;
-	float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0f), viewDir)));
-	float layerDepth = 1.0 / numLayers;
+	const float initSteps = 10;
+	const float refineSteps = 5;
+	
+	float layerDepth = 1.0 / initSteps;
 	float depthCurrent = 0.0;
 	vec2 shift = vec2(viewDir.x, -viewDir.y) / viewDir.z * 0.3; //y flip -> other solution?
-	vec2 uvCoordsDiff = shift / numLayers;
+	vec2 uvCoordsDiff = shift / initSteps;
 	
 	vec2 uvCoordsCurrent = uvCoords;
-	float depthMapCurrent = texture(normalMap, uvCoordsCurrent).r;
+	float depthMapValue = texture(normalMap, uvCoordsCurrent).r;
 	
-	while(depthCurrent < depthMapCurrent)
+	//init search
+	for(int i = 0; i < initSteps; ++i)
 	{
+		if(depthMapValue < depthCurrent)
+			break;
+	
 		uvCoordsCurrent -= uvCoordsDiff;
-		depthMapCurrent = texture(normalMap, uvCoordsCurrent).r;
+		depthMapValue = texture(normalMap, uvCoordsCurrent).r;
 		depthCurrent += layerDepth;
 	}
 	
-	vec2 uvCoordsPrev = uvCoordsCurrent + uvCoordsDiff;
+	//refinement
+	depthCurrent -= layerDepth;
+	uvCoordsCurrent += uvCoordsDiff;
+	depthMapValue = 1.0; //no need to sample again, because it IS higher than depthCurrent
+	layerDepth /= refineSteps;
+	uvCoordsDiff /= refineSteps;
+	for(int i = 0; i < refineSteps; ++i)
+	{
+		if(depthMapValue < depthCurrent)
+			break;
 	
-	float depthAfter = depthMapCurrent - depthCurrent;
-	float depthBefore = texture(normalMap, uvCoordsPrev).r - depthCurrent + layerDepth;
+		uvCoordsCurrent -= uvCoordsDiff;
+		depthMapValue = texture(normalMap, uvCoordsCurrent).r;
+		depthCurrent += layerDepth;
+	}
 	
-	float weight = depthAfter / (depthAfter - depthBefore);
-	
-	vec2 newUvCoords = uvCoordsPrev * weight + uvCoordsCurrent * (1.0 - weight);
-	
-	return newUvCoords;
+	return uvCoordsCurrent;
 }
 
 void main()
