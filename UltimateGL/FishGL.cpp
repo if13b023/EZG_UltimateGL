@@ -398,6 +398,8 @@ void FishGL::key_callback(int key, int action)
 				DEBUG(m_fps);
 				break;
 
+
+
 			case GLFW_KEY_1: m_AASamples = 2;
 				break;
 			case GLFW_KEY_2: m_AASamples = 4;

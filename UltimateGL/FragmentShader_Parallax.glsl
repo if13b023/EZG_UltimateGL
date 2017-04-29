@@ -3,12 +3,12 @@
 out vec4 fragColor;
 
 in vertex_data{
-	mat3 TBN;
 	vec3 FragPos;
 	vec2 uvCoords;
 	vec3 TangentLightPos;
 	vec3 TangentViewPos;
 	vec3 TangentFragPos;
+	vec3 TangentNormal;
 } fs_in;
 
 uniform vec3 objColor;
@@ -28,7 +28,7 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir)
 	float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0f), viewDir)));
 	float layerDepth = 1.0 / numLayers;
 	float depthCurrent = 0.0;
-	vec2 shift = viewDir.xy / viewDir.z; //* heightScale <- customization
+	vec2 shift = vec2(viewDir.x, -viewDir.y) / viewDir.z * 0.3; //y flip -> other solution?
 	vec2 uvCoordsDiff = shift / numLayers;
 	
 	vec2 uvCoordsCurrent = uvCoords;
@@ -69,7 +69,7 @@ void main()
     //if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
     //    discard;
 	
-	vec3 norm = normalize(fs_in.TBN[2]);
+	vec3 norm = normalize(fs_in.TangentNormal);
 	
 	vec3 color = texture(mainTexture,  uvCoords).rgb;
 	if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
@@ -80,14 +80,15 @@ void main()
 	vec3 ambient = color * ambientStrength * lightColor;
 	
 	// Diffuse 
-	vec3 lightDir = normalize(lightPos - fs_in.FragPos);
-	float diff = max(dot(norm, lightDir), 0.0);
+	vec3 lightDir = normalize(fs_in.TangentLightPos - fs_in.TangentFragPos);
+	float diff = max(dot(lightDir, norm), 0.0);
 	vec3 diffuse = color * diff * lightColor;
 	
 	// Specular
 	float specularStrength = 0.4;
 	vec3 reflectDir = reflect(-lightDir, norm);  
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+	vec3 halfwayDir = normalize(lightDir + viewDir);
+	float spec = pow(max(dot(norm, halfwayDir), 0.0), 32);
 	vec3 specular = specularStrength * spec * lightColor;  
 	
 	//final
