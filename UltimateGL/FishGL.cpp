@@ -144,8 +144,7 @@ void FishGL::Run()
 		lastframe = static_cast<float>(glfwGetTime());
 		m_fps = 1.f / dt;
 
-		if (m_freemode && m_animation != nullptr)
-		{
+
 			float pi = 3.1415f;
 			float moveSpeed = 0.1f;
 			glm::vec3 forwardVec(0, 0, moveSpeed),
@@ -176,16 +175,7 @@ void FishGL::Run()
 			glm::mat4 translate = glm::mat4(1.0f);
 			m_view = glm::translate(m_view, -m_camera.position);
 			m_view = glm::mat4_cast(m_camera.rotation) * m_view;
-		}
-		else {
-			glm::vec3 pos;
-			glm::quat rot;
 
-			runAnimation(pos, rot);
-			m_camera.position = pos;
-			m_camera.rotation = -rot;
-			m_view = glm::toMat4(m_camera.rotation) * glm::translate(m_view, -m_camera.position);
-		}
 		//keyboard events
 		glfwPollEvents();
 
@@ -844,14 +834,14 @@ void FishGL::i_renderScene(std::vector<sceneobj*>& scene, glm::mat4& m_view, boo
 
 		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "lightMatrix"), 1, GL_FALSE, glm::value_ptr(lightMatrix));
 
-		glBindVertexArray(scene[i]->VAO);
-
 		glm::mat4 transform;
 		transform = glm::translate(transform, scene[i]->position);
 		transform = glm::scale(transform, glm::vec3(scene[i]->scale));
 
 		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
 		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "projection"), 1, GL_FALSE, glm::value_ptr(m_projection));
+
+		glBindVertexArray(scene[i]->VAO);
 		if(scene[i]->triangles)
 			glDrawArrays(GL_TRIANGLES, 0, scene[i]->iCount);
 		else
