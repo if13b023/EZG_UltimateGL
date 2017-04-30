@@ -3,13 +3,13 @@
 out vec4 fragColor;
 
 in vertex_data{
-	vec3 FragPos;
+	vec3 fragPos;
 	vec2 uvCoords;
 	vec3 normal;
-	vec3 TangentLightPos;
-	vec3 TangentViewPos;
-	vec3 TangentFragPos;
-	vec3 TangentNormal;
+	vec3 tangentLightPos;
+	vec3 tangentViewPos;
+	vec3 tangentFragPos;
+	vec3 tangentNormal;
 } fs_in;
 
 uniform vec3 objColor;
@@ -74,7 +74,7 @@ void main()
 	}
 	
 	//vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-	vec3 viewDir = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
+	vec3 viewDir = normalize(fs_in.tangentViewPos - fs_in.tangentFragPos);
 	//vec2 uvCoords = parallaxMapping(fs_in.uvCoords, viewDir);
 	vec2 uvCoords = fs_in.uvCoords;
 	
@@ -82,7 +82,7 @@ void main()
     //if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
     //    discard;
 	
-	vec3 norm = normalize(fs_in.TangentNormal);
+	vec3 norm = normalize(fs_in.tangentNormal);
 	
 	vec3 color = texture(mainTexture,  uvCoords).rgb;
 	//if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
@@ -97,9 +97,9 @@ void main()
 	/* vec3 xColor = vec3(1.0, 0.0, 0.0);
 	vec3 yColor = vec3(0.0, 1.0, 0.0);
 	vec3 zColor = vec3(0.0, 0.0, 1.0); */
-	vec3 xColor = texture(mainTexture, fs_in.FragPos.zy).rgb;
-	vec3 yColor = texture(mainTexture, fs_in.FragPos.xz).rgb;
-	vec3 zColor = texture(mainTexture, fs_in.FragPos.xy).rgb;
+	vec3 xColor = texture(mainTexture, fs_in.fragPos.zy).rgb;
+	vec3 yColor = texture(mainTexture, fs_in.fragPos.xz).rgb;
+	vec3 zColor = texture(mainTexture, fs_in.fragPos.xy).rgb;
 	color = xColor * blend.x + yColor * blend.y + zColor * blend.z;
 	
 	// Ambient
@@ -107,7 +107,7 @@ void main()
 	vec3 ambient = color * ambientStrength * lightColor;
 	
 	// Diffuse 
-	vec3 lightDir = normalize(fs_in.TangentLightPos - fs_in.TangentFragPos);
+	vec3 lightDir = normalize(fs_in.tangentLightPos - fs_in.tangentFragPos);
 	float diff = max(dot(lightDir, norm), 0.0);
 	vec3 diffuse = color * diff * lightColor;
 	
