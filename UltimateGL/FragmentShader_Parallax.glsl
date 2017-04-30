@@ -22,18 +22,18 @@ uniform float normalFactor;
 uniform sampler2D mainTexture;
 uniform sampler2D normalMap;
 
-vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir)
+vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir, float scale)
 {
 	const float initSteps = 10;
 	const float refineSteps = 5;
 	
 	float layerDepth = 1.0 / initSteps;
 	float depthCurrent = 0.0;
-	vec2 shift = vec2(viewDir.x, viewDir.y) / viewDir.z * 0.1; //y flip -> other solution?
+	vec2 shift = viewDir.xy * 0.1; //y flip -> other solution?
 	vec2 uvCoordsDiff = shift / initSteps;
 	
 	vec2 uvCoordsCurrent = uvCoords;
-	float depthMapValue = texture(normalMap, uvCoordsCurrent).r;
+	float depthMapValue = texture(normalMap, uvCoordsCurrent * scale).r;
 	
 	//init search
 	for(int i = 0; i < initSteps; ++i)
@@ -42,7 +42,7 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir)
 			break;
 	
 		uvCoordsCurrent -= uvCoordsDiff;
-		depthMapValue = texture(normalMap, uvCoordsCurrent).r;
+		depthMapValue = texture(normalMap, uvCoordsCurrent * scale).r;
 		depthCurrent += layerDepth;
 	}
 	
@@ -58,7 +58,7 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir)
 			break;
 	
 		uvCoordsCurrent -= uvCoordsDiff;
-		depthMapValue = texture(normalMap, uvCoordsCurrent).r;
+		depthMapValue = texture(normalMap, uvCoordsCurrent * scale).r;
 		depthCurrent += layerDepth;
 	}
 	
@@ -94,16 +94,26 @@ void main()
 	blend = normalize(max(blend, 0.00001));
 	float b = (blend.x + blend.y + blend.z);
 	blend /= vec3(b, b, b);
-	/* vec3 xColor = vec3(1.0, 0.0, 0.0);
-	vec3 yColor = vec3(0.0, 1.0, 0.0);
-	vec3 zColor = vec3(0.0, 0.0, 1.0); */
-	vec3 xColor = texture(mainTexture, fs_in.fragPos.zy).rgb;
-	vec3 yColor = texture(mainTexture, fs_in.fragPos.xz).rgb;
-	vec3 zColor = texture(mainTexture, fs_in.fragPos.xy).rgb;
+	
+	vec3 xColorCode = vec3(1.0, 0.5, 0.5);
+	vec3 yColorCode = vec3(0.5, 1.0, 0.5);
+	vec3 zColorCode = vec3(0.5, 0.5, 1.5);
+	
+	float scale = 0.2;
+	
+	vec2 xCoords = parallaxMapping(fs_in.fragPos.zy, viewDir, scale);
+	vec3 xColor = texture(mainTexture, xCoords * scale).rgb * xColorCode;
+	
+	vec2 yCoords = parallaxMapping(fs_in.fragPos.xz, viewDir, scale);
+	vec3 yColor = texture(mainTexture, yCoords * scale).rgb * yColorCode;
+	
+	vec2 zCoords = parallaxMapping(fs_in.fragPos.xy, viewDir, scale);
+	vec3 zColor = texture(mainTexture, zCoords * scale).rgb * zColorCode;
+	
 	color = xColor * blend.x + yColor * blend.y + zColor * blend.z;
 	
 	// Ambient
-	float ambientStrength = 0.1;
+	float ambientStrength = 0.3;
 	vec3 ambient = color * ambientStrength * lightColor;
 	
 	// Diffuse 

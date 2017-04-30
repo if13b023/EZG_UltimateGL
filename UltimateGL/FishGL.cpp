@@ -77,6 +77,8 @@ GLFWwindow * FishGL::createWindow(int width, int height)
 
 	i_generateNewFrameBuffer();
 
+	glfwSwapInterval(1);
+
 	return m_window;
 }
 
