@@ -8,6 +8,7 @@ layout (location = 3) in vec3 tangent;
 out vertex_data{
 	vec3 FragPos;
 	vec2 uvCoords;
+	vec3 normal;
 	vec3 TangentLightPos;
 	vec3 TangentViewPos;
 	vec3 TangentFragPos;
@@ -27,6 +28,7 @@ void main()
 	vs_out.FragPos = vec3(transform * vec4(position, 1.0));
 	vs_out.uvCoords = uv;
 	//mat3 normalMatrix = transpose(inverse(mat3(transform)));
+	vs_out.normal = normal;
 	
 	//vec3 T = normalize(vec3(normalMatrix * tangent));
 	//vec3 N = normalize(vec3(normalMatrix * normal));

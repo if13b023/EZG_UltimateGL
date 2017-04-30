@@ -5,6 +5,7 @@ out vec4 fragColor;
 in vertex_data{
 	vec3 FragPos;
 	vec2 uvCoords;
+	vec3 normal;
 	vec3 TangentLightPos;
 	vec3 TangentViewPos;
 	vec3 TangentFragPos;
@@ -74,8 +75,8 @@ void main()
 	
 	//vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 viewDir = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
-	vec2 uvCoords = parallaxMapping(fs_in.uvCoords, viewDir);
-	//vec2 uvCoords = fs_in.uvCoords;
+	//vec2 uvCoords = parallaxMapping(fs_in.uvCoords, viewDir);
+	vec2 uvCoords = fs_in.uvCoords;
 	
 	// discards a fragment when sampling outside default texture region (fixes border artifacts)
     //if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
@@ -87,6 +88,19 @@ void main()
 	//if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
 		//color = vec3(1.0, 0.0, 0.0);
 		//discard;
+	
+	//tri-planar
+	vec3 blend = abs(fs_in.normal);
+	blend = normalize(max(blend, 0.00001));
+	float b = (blend.x + blend.y + blend.z);
+	blend /= vec3(b, b, b);
+	/* vec3 xColor = vec3(1.0, 0.0, 0.0);
+	vec3 yColor = vec3(0.0, 1.0, 0.0);
+	vec3 zColor = vec3(0.0, 0.0, 1.0); */
+	vec3 xColor = texture(mainTexture, fs_in.FragPos.zy).rgb;
+	vec3 yColor = texture(mainTexture, fs_in.FragPos.xz).rgb;
+	vec3 zColor = texture(mainTexture, fs_in.FragPos.xy).rgb;
+	color = xColor * blend.x + yColor * blend.y + zColor * blend.z;
 	
 	// Ambient
 	float ambientStrength = 0.1;
