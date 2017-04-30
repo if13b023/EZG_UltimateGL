@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 	std::vector<tinyobj::material_t> materials;
 
 	if(argc < 2)
-		ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "cubes.obj");
+		ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "cube_uv.obj");
 	else
 		ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, argv[1]);
 

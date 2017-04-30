@@ -398,7 +398,10 @@ void FishGL::key_callback(int key, int action)
 				DEBUG(m_fps);
 				break;
 
-
+			case GLFW_KEY_C:
+				glDeleteShader(m_scene[0]->shader->Program);
+				m_scene[0]->shader = addShader("VertexShader_Parallax.glsl", "FragmentShader_Parallax.glsl");
+				break;
 
 			case GLFW_KEY_1: m_AASamples = 2;
 				break;
@@ -794,18 +797,26 @@ void FishGL::i_renderScene(std::vector<sceneobj*>& scene, glm::mat4& m_view, boo
 		glm::vec3(0.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 lightMatrix = lightProjection * lightView;
+	
+	Shader* shader;
+
+	if (scene.size() > 0)
+	{
+		shader = scene[0]->shader;
+		shader->Use();
+	}
 
 	for (GLuint i = 0; i < scene.size(); i++)
 	{
-		Shader* shader;
+		/*Shader* shader;
 		if (!isShadow)
 		{
 			shader = scene[i]->shader;
 		}
 		else
-			shader = m_shadow.shader;
+			shader = m_shadow.shader;*/
 
-		shader->Use();
+		//shader->Use();
 		if (!isShadow/* && false*/)
 		{
 			glUniform1i(glGetUniformLocation(shader->Program, "simple"), scene[i]->simple);

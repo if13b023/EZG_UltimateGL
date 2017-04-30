@@ -37,7 +37,7 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir)
 	//init search
 	for(int i = 0; i < initSteps; ++i)
 	{
-		if(depthMapValue < depthCurrent)
+		if(depthMapValue <= depthCurrent)
 			break;
 	
 		uvCoordsCurrent -= uvCoordsDiff;
@@ -46,7 +46,7 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir)
 	}
 	
 	//refinement
-	depthCurrent -= layerDepth;
+	/* depthCurrent -= layerDepth;
 	uvCoordsCurrent += uvCoordsDiff;
 	depthMapValue = 1.0; //no need to sample again, because it IS higher than depthCurrent
 	layerDepth /= refineSteps;
@@ -59,7 +59,7 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir)
 		uvCoordsCurrent -= uvCoordsDiff;
 		depthMapValue = texture(normalMap, uvCoordsCurrent).r;
 		depthCurrent += layerDepth;
-	}
+	} */
 	
 	return uvCoordsCurrent;
 }
@@ -75,6 +75,7 @@ void main()
 	//vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 viewDir = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
 	vec2 uvCoords = parallaxMapping(fs_in.uvCoords, viewDir);
+	//vec2 uvCoords = fs_in.uvCoords;
 	
 	// discards a fragment when sampling outside default texture region (fixes border artifacts)
     //if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
@@ -83,8 +84,9 @@ void main()
 	vec3 norm = normalize(fs_in.TangentNormal);
 	
 	vec3 color = texture(mainTexture,  uvCoords).rgb;
-	//if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
-	//	color = vec3(1.0, 0.0, 0.0);
+	if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
+		color = vec3(1.0, 0.0, 0.0);
+		//discard;
 	
 	// Ambient
 	float ambientStrength = 0.1;
