@@ -28,7 +28,7 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir)
 	
 	float layerDepth = 1.0 / initSteps;
 	float depthCurrent = 0.0;
-	vec2 shift = vec2(viewDir.x, -viewDir.y) / viewDir.z * 0.3; //y flip -> other solution?
+	vec2 shift = vec2(viewDir.x, viewDir.y) / viewDir.z * 0.1; //y flip -> other solution?
 	vec2 uvCoordsDiff = shift / initSteps;
 	
 	vec2 uvCoordsCurrent = uvCoords;
@@ -46,7 +46,7 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir)
 	}
 	
 	//refinement
-	/* depthCurrent -= layerDepth;
+	depthCurrent -= layerDepth;
 	uvCoordsCurrent += uvCoordsDiff;
 	depthMapValue = 1.0; //no need to sample again, because it IS higher than depthCurrent
 	layerDepth /= refineSteps;
@@ -59,7 +59,7 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir)
 		uvCoordsCurrent -= uvCoordsDiff;
 		depthMapValue = texture(normalMap, uvCoordsCurrent).r;
 		depthCurrent += layerDepth;
-	} */
+	}
 	
 	return uvCoordsCurrent;
 }
@@ -84,8 +84,8 @@ void main()
 	vec3 norm = normalize(fs_in.TangentNormal);
 	
 	vec3 color = texture(mainTexture,  uvCoords).rgb;
-	if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
-		color = vec3(1.0, 0.0, 0.0);
+	//if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
+		//color = vec3(1.0, 0.0, 0.0);
 		//discard;
 	
 	// Ambient
