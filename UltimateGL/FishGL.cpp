@@ -164,20 +164,20 @@ void FishGL::Run()
 
 			if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
 				if (glfwGetKey(m_window, GLFW_KEY_N) == GLFW_PRESS)
-					m_normalFactor = glm::max(m_normalFactor - 0.5f * dt, 0.0f);
+					m_normalFactor = glm::max(m_normalFactor - 0.2f * dt, 0.0f);
 				else
 					m_camera.position -= sideVec * m_camera.rotation;
 			else if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
 				if (glfwGetKey(m_window, GLFW_KEY_N) == GLFW_PRESS)
-					m_normalFactor = glm::min(m_normalFactor + 0.5f * dt, 1.0f);
+					m_normalFactor = glm::min(m_normalFactor + 0.2f * dt, 1.0f);
 				else
 					m_camera.position += sideVec * m_camera.rotation;
 
 			
 
-			glm::mat4 translate = glm::mat4(1.0f);
-			m_view = glm::translate(m_view, -m_camera.position);
-			m_view = glm::mat4_cast(m_camera.rotation) * m_view;
+		glm::mat4 translate = glm::mat4(1.0f);
+		m_view = glm::translate(m_view, -m_camera.position);
+		m_view = glm::mat4_cast(m_camera.rotation) * m_view;
 
 		//keyboard events
 		glfwPollEvents();
