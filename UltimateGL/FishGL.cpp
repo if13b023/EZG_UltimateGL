@@ -162,13 +162,13 @@ void FishGL::Run()
 			}
 
 			if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
-				if (glfwGetKey(m_window, GLFW_KEY_N) == GLFW_PRESS && m_normalFactor > 0.f)
-					m_normalFactor -= 0.5f * dt;
+				if (glfwGetKey(m_window, GLFW_KEY_N) == GLFW_PRESS)
+					m_normalFactor = glm::max(m_normalFactor - 0.5f * dt, 0.0f);
 				else
 					m_camera.position -= sideVec * m_camera.rotation;
 			else if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
-				if (glfwGetKey(m_window, GLFW_KEY_N) == GLFW_PRESS && m_normalFactor < 1.f)
-					m_normalFactor += 0.5f * dt;
+				if (glfwGetKey(m_window, GLFW_KEY_N) == GLFW_PRESS)
+					m_normalFactor = glm::min(m_normalFactor + 0.5f * dt, 1.0f);
 				else
 					m_camera.position += sideVec * m_camera.rotation;
 

@@ -35,21 +35,8 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir, float scale, float normalSign,
 		shift = vec2(-viewDir.x, viewDir.y);
 	else if((mode == 0 && normalSign > 0) || (mode == 1 && normalSign < 0) || (mode == 2 && normalSign > 0))
 		shift = vec2(viewDir.x, -viewDir.y);
-		
-	/* else if(mode == 1 && normalSign < 0)
-		shift = vec2(viewDir.x, -viewDir.y); */
 	else if((mode == 1 && normalSign > 0) || (mode == 2 && normalSign < 0))
 		shift = vec2(viewDir.x, viewDir.y);
-		
-	/* else if(mode == 2 && normalSign < 0)
-		shift = vec2(viewDir.x, viewDir.y); */
-	/* else if(mode == 2 && normalSign > 0)
-		shift = vec2(viewDir.x, -viewDir.y); */
-	
-	/* if(normalSign > 0)
-		shift = vec2(viewDir.x, -viewDir.y);//y flip -> other solution?
-	else if(normalSign < 0)
-		shift = vec2(-viewDir.x, viewDir.y); */
 		
 	shift *= normalFactor;
 	vec2 uvCoordsDiff = shift / initSteps;
@@ -95,21 +82,8 @@ void main()
 		return;
 	}
 	
-	//vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 viewDir = normalize(fs_in.tangentViewPos - fs_in.tangentFragPos);
-	//vec2 uvCoords = parallaxMapping(fs_in.uvCoords, viewDir);
-	vec2 uvCoords = fs_in.uvCoords;
-	
-	// discards a fragment when sampling outside default texture region (fixes border artifacts)
-    //if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
-    //    discard;
-	
 	vec3 norm = normalize(fs_in.tangentNormal);
-	
-	vec3 color = texture(mainTexture,  uvCoords).rgb;
-	//if(uvCoords.x > 1.0 || uvCoords.y > 1.0 || uvCoords.x < 0.0 || uvCoords.y < 0.0)
-		//color = vec3(1.0, 0.0, 0.0);
-		//discard;
 	
 	//tri-planar
 	vec3 blend = abs(fs_in.normal);
@@ -121,7 +95,7 @@ void main()
 	vec3 yColorCode = vec3(0, 1.0, 0);
 	vec3 zColorCode = vec3(0, 0, 1.0);
 	
-	float scale = 0.2;
+	float scale = 0.99;
 	
 	vec2 xCoords = parallaxMapping(fs_in.fragPos.zy, viewDir, scale, sign(fs_in.normal.x), 0);
 	vec3 xColor = texture(mainTexture, xCoords * scale).rgb * max(xColorCode, 1.0);
@@ -132,7 +106,7 @@ void main()
 	vec2 zCoords = parallaxMapping(fs_in.fragPos.xy, viewDir, scale, sign(fs_in.normal.z), 2);
 	vec3 zColor = texture(mainTexture, zCoords * scale).rgb * max(zColorCode, 1.0);
 	
-	color = xColor * blend.x * 1 + yColor * blend.y * 1 + zColor * blend.z * 1;
+	vec3 color = xColor * blend.x * 1 + yColor * blend.y * 1 + zColor * blend.z * 1;
 	
 	// Ambient
 	float ambientStrength = 0.9;
