@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
 		scene[i]->meshPtr = &objects[i];
 		scene[i]->scale = 1.f;
 		scene[i]->shader = main_shader;
-		scene[i]->position = glm::vec3(0, 0.0f, 0);
+		scene[i]->position = glm::vec3(0.0f, 0.0f, 0.0f);
 		scene[i]->texture = texture1;
 		scene[i]->normal = normal;
 		scene[i]->color = glm::vec3(1.0f, 0.f, 0.f);
