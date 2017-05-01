@@ -21,11 +21,12 @@ uniform bool simple;
 uniform float normalFactor;
 uniform sampler2D mainTexture;
 uniform sampler2D normalMap;
+uniform ivec2 displacementSteps;
 
 vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir, float scale, float normalSign, int mode)
 {
-	const float initSteps = 10;
-	const float refineSteps = 5;
+	int initSteps = displacementSteps.x;
+	int refineSteps = displacementSteps.y;
 	
 	float layerDepth = 1.0 / initSteps;
 	float depthCurrent = 0.0;

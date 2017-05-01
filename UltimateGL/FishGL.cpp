@@ -14,7 +14,8 @@ FishGL::FishGL()
 	m_AASamples(1),
 	m_lineId(-1),
 	m_hitId(-1),
-	m_debug(true)
+	m_debug(true),
+	m_displacementSteps(ivec2{ 10, 5 })
 {
 	glfwInit();
 	m_shaders.reserve(16);
@@ -296,18 +297,18 @@ void FishGL::key_callback(int key, int action)
 				m_animation_start = glfwGetTime();
 				DEBUG(m_freemode);
 				break;
-			case GLFW_KEY_R:
-				std::cout << "frame[" << anim_count << "].position = glm::vec3(" << m_camera.position.x << "f, " << m_camera.position.y << "f, " << m_camera.position.z << "f);" << std::endl;
-				std::cout << "frame[" << anim_count << "].rotation = glm::quat(" << m_camera.rotation.w << "f, " << m_camera.rotation.x << "f, " << m_camera.rotation.y << "f, " << m_camera.rotation.z << "f);" << std::endl;
-				m_animation->frames[anim_count].position = m_camera.position;
-				m_animation->frames[anim_count].rotation = m_camera.rotation;
-				anim_count++;
-				if (anim_count == 10)
-					anim_count = 0;
+			//case GLFW_KEY_R:
+			//	std::cout << "frame[" << anim_count << "].position = glm::vec3(" << m_camera.position.x << "f, " << m_camera.position.y << "f, " << m_camera.position.z << "f);" << std::endl;
+			//	std::cout << "frame[" << anim_count << "].rotation = glm::quat(" << m_camera.rotation.w << "f, " << m_camera.rotation.x << "f, " << m_camera.rotation.y << "f, " << m_camera.rotation.z << "f);" << std::endl;
+			//	m_animation->frames[anim_count].position = m_camera.position;
+			//	m_animation->frames[anim_count].rotation = m_camera.rotation;
+			//	anim_count++;
+			//	if (anim_count == 10)
+			//		anim_count = 0;
 
-				m_animationPoints = getAnimation(m_AnimResolution);
+			//	m_animationPoints = getAnimation(m_AnimResolution);
 
-				break;
+			//	break;
 			case GLFW_KEY_Q:
 			{
 				std::cout << "Camera Position: " << m_camera.position.x << "|" << m_camera.position.y << "|" << m_camera.position.z << std::endl;
@@ -399,12 +400,10 @@ void FishGL::key_callback(int key, int action)
 				i_generateNewFrameBuffer();
 				DEBUG(m_fps);
 				break;
-
 			case GLFW_KEY_C:
 				glDeleteShader(m_scene[0]->shader->Program);
 				m_scene[0]->shader = addShader("VertexShader_Parallax.glsl", "FragmentShader_Parallax.glsl");
 				break;
-
 			case GLFW_KEY_1: m_AASamples = 2;
 				break;
 			case GLFW_KEY_2: m_AASamples = 4;
@@ -414,6 +413,22 @@ void FishGL::key_callback(int key, int action)
 			case GLFW_KEY_4: m_AASamples = 16;
 				break;
 			case GLFW_KEY_5: m_AASamples = 32;
+				break;
+			case GLFW_KEY_R:
+				if (glfwGetKey(m_window, GLFW_KEY_X) == GLFW_PRESS)
+					++m_displacementSteps.x;
+				else if (glfwGetKey(m_window, GLFW_KEY_Z) == GLFW_PRESS)
+					--m_displacementSteps.x;
+				m_displacementSteps.x = glm::clamp(m_displacementSteps.x, 0, INT_MAX);
+				DEBUG(m_displacementSteps.x);
+				break;
+			case GLFW_KEY_E:
+				if (glfwGetKey(m_window, GLFW_KEY_X) == GLFW_PRESS)
+					++m_displacementSteps.y;
+				else if (glfwGetKey(m_window, GLFW_KEY_Z) == GLFW_PRESS)
+					--m_displacementSteps.y;
+				m_displacementSteps.y = glm::clamp(m_displacementSteps.y, 0, INT_MAX);
+				DEBUG(m_displacementSteps.y);
 				break;
 		}
 	}
@@ -852,6 +867,8 @@ void FishGL::i_renderScene(std::vector<sceneobj*>& scene, glm::mat4& m_view, boo
 		glm::mat4 transform;
 		transform = glm::translate(transform, scene[i]->position);
 		transform = glm::scale(transform, glm::vec3(scene[i]->scale));
+
+		glUniform2i(glGetUniformLocation(scene[i]->shader->Program, "displacementSteps"), m_displacementSteps.x, m_displacementSteps.y);
 
 		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
 		glUniformMatrix4fv(glGetUniformLocation(shader->Program, "projection"), 1, GL_FALSE, glm::value_ptr(m_projection));

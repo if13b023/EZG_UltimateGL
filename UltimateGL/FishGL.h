@@ -103,6 +103,11 @@ struct kdNode {
 	bool isHit(glm::vec3 rOrigin, glm::vec3 rDirection, float length);
 };
 
+struct ivec2
+{
+	int x, y;
+};
+
 class FishGL
 {
 public:
@@ -171,6 +176,7 @@ private:
 	FT_Library m_ftlib;
 	kdNode* m_kdRoot;
 	std::vector<Triangle> m_triangles;
+	ivec2 m_displacementSteps;
 
 	//DEBUG
 	Shader* m_lineShader;
