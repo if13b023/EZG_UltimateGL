@@ -25,10 +25,10 @@ FishGL::FishGL()
 	m_light.position = glm::vec3(0.f, 5.0f, 0.f);
 	m_light.color = glm::vec3(1.f, 1.0f, 1.f);
 
-	if (FT_Init_FreeType(&m_ftlib)) {
+	/*if (FT_Init_FreeType(&m_ftlib)) {
 		std::cout << "Could not init freetype library\n";
 		exit(666);
-	}
+	}*/
 }
 
 FishGL::~FishGL()
