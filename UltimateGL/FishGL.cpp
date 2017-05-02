@@ -9,7 +9,7 @@ FishGL::FishGL()
 	m_AnimResolution(50),
 	m_lightCam(false),
 	m_shadowSwitch(true),
-	m_normalFactor(.5f),
+	m_normalFactor(.1f),
 	m_AA(false),
 	m_AASamples(1),
 	m_lineId(-1),
@@ -850,6 +850,10 @@ void FishGL::i_renderScene(std::vector<sceneobj*>& scene, glm::mat4& m_view, boo
 				glActiveTexture(GL_TEXTURE2);
 				glBindTexture(GL_TEXTURE_2D, scene[i]->normal);
 				glUniform1i(glGetUniformLocation(shader->Program, "normalMap"), 2);
+
+				glActiveTexture(GL_TEXTURE3);
+				glBindTexture(GL_TEXTURE_2D, scene[i]->displace);
+				glUniform1i(glGetUniformLocation(shader->Program, "displaceMap"), 3);
 
 				glUniform1i(glGetUniformLocation(shader->Program, "shadowSwitch"), m_shadowSwitch);
 				glUniform1f(glGetUniformLocation(shader->Program, "normalFactor"), m_normalFactor);

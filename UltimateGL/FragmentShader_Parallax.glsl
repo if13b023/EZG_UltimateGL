@@ -21,6 +21,7 @@ uniform bool simple;
 uniform float normalFactor;
 uniform sampler2D mainTexture;
 uniform sampler2D normalMap;
+uniform sampler2D displaceMap;
 uniform ivec2 displacementSteps;
 
 vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir, float scale, float normalSign, int mode)
@@ -39,11 +40,13 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir, float scale, float normalSign,
 	else if((mode == 1 && normalSign > 0) || (mode == 2 && normalSign < 0))
 		shift = vec2(viewDir.x, viewDir.y);
 		
-	shift *= normalFactor;
+	shift = vec2(viewDir.x, -viewDir.y);
+		
+	shift *= normalFactor * normalSign;
 	vec2 uvCoordsDiff = shift / initSteps;
 	
 	vec2 uvCoordsCurrent = uvCoords;
-	float depthMapValue = texture(normalMap, uvCoordsCurrent * scale).r;
+	float depthMapValue = texture(displaceMap, uvCoordsCurrent * scale).r;
 	
 	//init search
 	for(int i = 0; i < initSteps; ++i)
@@ -52,7 +55,7 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir, float scale, float normalSign,
 			break;
 	
 		uvCoordsCurrent -= uvCoordsDiff;
-		depthMapValue = texture(normalMap, uvCoordsCurrent * scale).r;
+		depthMapValue = texture(displaceMap, uvCoordsCurrent * scale).r;
 		depthCurrent += layerDepth;
 	}
 	
@@ -68,7 +71,7 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir, float scale, float normalSign,
 			break;
 	
 		uvCoordsCurrent -= uvCoordsDiff;
-		depthMapValue = texture(normalMap, uvCoordsCurrent * scale).r;
+		depthMapValue = texture(displaceMap, uvCoordsCurrent * scale).r;
 		depthCurrent += layerDepth;
 	}
 	
@@ -96,33 +99,38 @@ void main()
 	vec3 yColorCode = vec3(0, 1.0, 0);
 	vec3 zColorCode = vec3(0, 0, 1.0);
 	
-	float scale = 0.99;
+	float scale = 1.0;
+	float colorFactor = 1.0;
 	
 	vec2 xCoords = parallaxMapping(fs_in.fragPos.zy, viewDir, scale, sign(fs_in.normal.x), 0);
-	vec3 xColor = texture(mainTexture, xCoords * scale).rgb * max(xColorCode, 1.0);
+	vec3 xColor = texture(mainTexture, xCoords * scale).rgb * max(xColorCode, colorFactor);
+	vec3 xNormal = normalize(texture(normalMap, xCoords * scale).rgb * 2.0 - 1.0);
 	
 	vec2 yCoords = parallaxMapping(fs_in.fragPos.xz, viewDir, scale, sign(fs_in.normal.y), 1);
-	vec3 yColor = texture(mainTexture, yCoords * scale).rgb * max(yColorCode, 1.0);
+	vec3 yColor = texture(mainTexture, yCoords * scale).rgb * max(yColorCode, colorFactor);
+	vec3 yNormal = normalize(texture(normalMap, yCoords * scale).rgb * 2.0 - 1.0);
 	
 	vec2 zCoords = parallaxMapping(fs_in.fragPos.xy, viewDir, scale, sign(fs_in.normal.z), 2);
-	vec3 zColor = texture(mainTexture, zCoords * scale).rgb * max(zColorCode, 1.0);
+	vec3 zColor = texture(mainTexture, zCoords * scale).rgb * max(zColorCode, colorFactor);
+	vec3 zNormal = normalize(texture(normalMap, zCoords * scale).rgb * 2.0 - 1.0);
 	
 	vec3 color = xColor * blend.x * 1 + yColor * blend.y * 1 + zColor * blend.z * 1;
+	vec3 normal = xNormal * blend.x * 1 + yNormal * blend.y * 1 + zNormal * blend.z * 1;
 	
 	// Ambient
-	float ambientStrength = 0.9;
+	float ambientStrength = 0.2;
 	vec3 ambient = color * ambientStrength * lightColor;
 	
 	// Diffuse 
 	vec3 lightDir = normalize(fs_in.tangentLightPos - fs_in.tangentFragPos);
-	float diff = max(dot(lightDir, norm), 0.0);
+	float diff = max(dot(lightDir, normal), 0.0);
 	vec3 diffuse = color * diff * lightColor;
 	
 	// Specular
-	float specularStrength = 0.4;
-	vec3 reflectDir = reflect(-lightDir, norm);
+	float specularStrength = 0.2;
+	vec3 reflectDir = reflect(-lightDir, normal);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(norm, halfwayDir), 0.0), 32);
+	float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
 	vec3 specular = specularStrength * spec * lightColor;  
 	
 	//final

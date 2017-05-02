@@ -40,6 +40,7 @@ struct sceneobj {
 	bool simple, triangles;
 	GLuint texture;
 	GLuint normal;
+	GLuint displace;
 	Mesh* meshPtr;
 
 	bool operator < (const sceneobj& t) const
