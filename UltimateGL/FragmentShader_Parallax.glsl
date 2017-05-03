@@ -45,7 +45,7 @@ vec2 parallaxMapping(vec2 uvCoords, vec3 viewDir, float scale, float normalSign,
 	if(mode == 1)
 	 shift *= -1;
 		
-	shift *= normalFactor * normalSign;
+	shift *= normalFactor * normalSign * 0.5;
 	vec2 uvCoordsDiff = shift / initSteps;
 	
 	vec2 uvCoordsCurrent = uvCoords;
@@ -108,17 +108,17 @@ void main()
 	vec2 xCoords = parallaxMapping(fs_in.fragPos.zy, viewDir, scale, sign(fs_in.normal.x), 0);
 	vec3 xColor = texture(mainTexture, xCoords * scale).rgb * max(xColorCode, colorFactor);
 	vec3 xNormal = normalize(texture(normalMap, xCoords * scale).rgb * 2.0 - 1.0);
-	xNormal = normalize(mix(fs_in.tangentNormal, -xNormal, min(normalFactor*5, 1.0)));
+	xNormal = normalize(mix(fs_in.tangentNormal,sign(fs_in.normal.x) * xNormal, min(normalFactor, 1.0)));
 	
 	vec2 yCoords = parallaxMapping(fs_in.fragPos.xz, viewDir, scale, sign(fs_in.normal.y), 1);
 	vec3 yColor = texture(mainTexture, yCoords * scale).rgb * max(yColorCode, colorFactor);
 	vec3 yNormal = normalize(texture(normalMap, yCoords * scale).rgb * 2.0 - 1.0);
-	yNormal = normalize(mix(fs_in.tangentNormal, -yNormal, min(normalFactor*5, 1.0)));
+	yNormal = normalize(mix(fs_in.tangentNormal,sign(fs_in.normal.y) * yNormal, min(normalFactor, 1.0)));
 	
 	vec2 zCoords = parallaxMapping(fs_in.fragPos.xy, viewDir, scale, sign(fs_in.normal.z), 2);
 	vec3 zColor = texture(mainTexture, zCoords * scale).rgb * max(zColorCode, colorFactor);
 	vec3 zNormal = normalize(texture(normalMap, zCoords * scale).rgb * 2.0 - 1.0);
-	zNormal = normalize(mix(fs_in.tangentNormal, -zNormal, min(normalFactor*5, 1.0)));
+	zNormal = normalize(mix(fs_in.tangentNormal,sign(fs_in.normal.z) * zNormal, min(normalFactor, 1.0)));
 	
 	vec3 color = xColor * blend.x * 1 + yColor * blend.y * 1 + zColor * blend.z * 1;
 	vec3 normal = xNormal * blend.x * 1 + yNormal * blend.y * 1 + zNormal * blend.z * 1;
