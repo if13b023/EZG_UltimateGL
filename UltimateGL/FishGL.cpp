@@ -24,10 +24,10 @@ FishGL::FishGL()
 	m_light.position = glm::vec3(0.f, 5.0f, 0.f);
 	m_light.color = glm::vec3(1.f, 1.0f, 1.f);
 
-	if (FT_Init_FreeType(&m_ftlib)) {
-		std::cout << "Could not init freetype library\n";
-		exit(666);
-	}
+	//if (FT_Init_FreeType(&m_ftlib)) {
+	//	std::cout << "Could not init freetype library\n";
+	//	exit(666);
+	//}
 }
 
 FishGL::~FishGL()
@@ -407,7 +407,9 @@ void FishGL::key_callback(int key, int action)
 				i_generateNewFrameBuffer();
 				DEBUG(m_fps);
 				break;
-
+			case GLFW_KEY_C:
+				m_scene[0]->shader = addShader("VertexShader.glsl", "FragmentShader.glsl");
+				break;
 			case GLFW_KEY_1: m_AASamples = 2;
 				break;
 			case GLFW_KEY_2: m_AASamples = 4;
@@ -796,9 +798,9 @@ void FishGL::calcTangents(glm::vec3 * vert, glm::vec2 * uv, glm::vec3 & t)
 
 void FishGL::i_renderScene(std::vector<sceneobj*>& scene, glm::mat4& m_view, bool isShadow)
 {
-	GLfloat near_plane = 1.0f, far_plane = 20.0f;
+	GLfloat near_plane = 1.0f, far_plane = 30.0f;
 	glm::mat4 lightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, near_plane, far_plane);
-	glm::mat4 lightView = glm::lookAt(glm::vec3(m_light.position.x, 10.0f, m_light.position.z),
+	glm::mat4 lightView = glm::lookAt(glm::vec3(m_light.position.x, m_light.position.y, m_light.position.z),
 		glm::vec3(0.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 lightMatrix = lightProjection * lightView;
@@ -808,7 +810,7 @@ void FishGL::i_renderScene(std::vector<sceneobj*>& scene, glm::mat4& m_view, boo
 		Shader* shader;
 		if (!isShadow)
 		{
-			shader = scene[i]->shader;
+			shader = scene[0]->shader;
 		}
 		else
 			shader = m_shadow.shader;
