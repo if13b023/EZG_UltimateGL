@@ -14,9 +14,6 @@
 #include <glm/gtx/spline.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
 #include "Shader.h"
 #include "SOIL.h"
 
@@ -168,7 +165,6 @@ private:
 	glm::vec3* m_animationPoints;
 	int m_AnimResolution;
 	shadow m_shadow;
-	FT_Library m_ftlib;
 	kdNode* m_kdRoot;
 	std::vector<Triangle> m_triangles;
 
