@@ -2,11 +2,11 @@
 
 #define BLOCKER_SEARCH_NUM_SAMPLES 16
 #define PCF_NUM_SAMPLES 16
-#define NEAR_PLANE 1.0
+#define NEAR_PLANE 0.0
 #define LIGHT_WORLD_SIZE .5
-#define LIGHT_FRUSTUM_WIDTH 3.75
+#define LIGHT_FRUSTUM_WIDTH 300 //3.75
 
-#define LIGHT_SIZE_UV (LIGHT_WORLD_SIZE / LIGHT_FRUSTUM_WIDTH)
+#define LIGHT_SIZE_UV 0.005//(LIGHT_WORLD_SIZE / LIGHT_FRUSTUM_WIDTH)
 
 const vec2 poissonDisk[16] = vec2[](
 	vec2( -0.94201624, -0.39906216 ),
@@ -56,7 +56,7 @@ void FindBlocker(out float avgBlockerDepth, out float numBlockers, vec2 uv, floa
 {
 	//This uses similar triangles to compute what
 	//area of the shadow map we should search
-	float searchWidth = LIGHT_SIZE_UV * (zReceiver - NEAR_PLANE) / zReceiver;
+	float searchWidth = LIGHT_SIZE_UV * (zReceiver/* - NEAR_PLANE*/) / zReceiver;
 	float blockerSum = 0;
 	numBlockers = 0;
 	for( int i = 0; i < BLOCKER_SEARCH_NUM_SAMPLES; ++i )
@@ -74,28 +74,14 @@ void FindBlocker(out float avgBlockerDepth, out float numBlockers, vec2 uv, floa
 
 float PCF_Filter(vec2 uv, float zReceiver, float filterRadiusUV )
 {
-	// float sum = 0.0f;
-	// for ( int i = 0; i < PCF_NUM_SAMPLES; ++i )
-	// {
-		// vec2 offset = poissonDisk[i] * filterRadiusUV;
-		// sum += tDepthMap.SampleCmpLevelZero(PCF_Sampler, uv + offset, zReceiver);
-	// }
-	// return sum / PCF_NUM_SAMPLES;
-	
-	float shadow = 0.0;
-	vec2 texelSize = 1.0 / textureSize(depthMap, 0);
-	float bias = 0.005;
-	
-	for(int x = -1; x <= 1; ++x)
+	float sum = 0.0f;
+	for ( int i = 0; i < PCF_NUM_SAMPLES; ++i )
 	{
-		for(int y = -1; y <= 1; ++y)
-		{
-			float pcfDepth = texture(depthMap, uv + vec2(x, y) * texelSize).r; 
-			shadow += zReceiver - bias > pcfDepth ? 1.0 : 0.0;        
-		}    
+		vec2 offset = poissonDisk[i] * filterRadiusUV;
+		//sum += tDepthMap.SampleCmpLevelZero(PCF_Sampler, uv + offset, zReceiver);
+		sum += zReceiver - 0.005 > texture(depthMap, uv + offset).r ? 1.0 : 0.0;
 	}
-	
-	return shadow /= 9.0;
+	return sum / PCF_NUM_SAMPLES;
 }
 
 float PCSS (vec3 coords)
@@ -115,7 +101,7 @@ float PCSS (vec3 coords)
 	
 	/* STEP 2: penumbra size */
 	float penumbraRatio = PenumbraSize(zReceiver, avgBlockerDepth);
-	float filterRadiusUV = penumbraRatio * LIGHT_SIZE_UV * NEAR_PLANE / coords.z;
+	float filterRadiusUV = penumbraRatio * LIGHT_SIZE_UV /** NEAR_PLANE*/ / coords.z;
 	
 	/* STEP 3: filtering */
 	return PCF_Filter( uv, zReceiver, filterRadiusUV );
@@ -134,32 +120,8 @@ float shadowCalc(vec4 fragPosLightSpace, vec3 norm)
 	if(pcss)
 		return PCSS(projCoords);
 	else
-	{	
-		// Get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-		float closestDepth = texture(depthMap, projCoords.xy).r; 
-		// Get depth of current fragment from light's perspective
-		float currentDepth = projCoords.z;
-		// Check whether current frag pos is in shadow
-		float bias = max(0.005 * (1.0 - dot(norm, normalize(lightPos - fs_in.FragPos))), 0.005);
-		bias = 0.005;
-		
-		float shadow = 0.0;
-		vec2 texelSize = 1.0 / textureSize(depthMap, 0);
-		
-		// for(int x = -1; x <= 1; ++x)
-		// {
-			// for(int y = -1; y <= 1; ++y)
-			// {
-				// float pcfDepth = texture(depthMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-				// shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
-			// }    
-		// }
-		
-		// shadow /= 9.0;	
-		
-		shadow += currentDepth - bias > closestDepth ? 1.0 : 0.0;
-		
-		return shadow;
+	{			
+		return PCF_Filter( projCoords.xy, projCoords.z, 0.001 );
 	}
 }
 
