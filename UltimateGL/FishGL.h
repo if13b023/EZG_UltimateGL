@@ -141,7 +141,7 @@ public:
 
 private:
 	bool m_shadowSwitch, m_AA, m_debug;
-	int m_AASamples;
+	int m_AASamples, m_shadowMode;
 	float m_normalFactor,
 			m_fps;
 	GLFWwindow* m_window;

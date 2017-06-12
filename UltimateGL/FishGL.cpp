@@ -14,7 +14,8 @@ FishGL::FishGL()
 	m_AASamples(1),
 	m_lineId(-1),
 	m_hitId(-1),
-	m_debug(true)
+	m_debug(true),
+	m_shadowMode(-1)
 {
 	glfwInit();
 	m_shaders.reserve(16);
@@ -193,12 +194,15 @@ void FishGL::Run()
 			m_light.position = m_camera.position;
 
 		//shadow stuff
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
 		glViewport(0, 0, m_shadow.size, m_shadow.size);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_shadow.depthFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		i_renderScene(m_scene, m_view, true);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, m_size.x, m_size.y); //reset viewport
+		glDisable(GL_CULL_FACE);
 
 
 		//color render
@@ -410,7 +414,16 @@ void FishGL::key_callback(int key, int action)
 			case GLFW_KEY_C:
 				m_scene[0]->shader = addShader("VertexShader.glsl", "FragmentShader.glsl");
 				break;
-			case GLFW_KEY_1: m_AASamples = 2;
+			case GLFW_KEY_1:
+				m_shadowMode = 0;
+				break;
+			case GLFW_KEY_2:
+				m_shadowMode = 1;
+				break;
+			case GLFW_KEY_3:
+				m_shadowMode = 2;
+				break;
+			/*case GLFW_KEY_1: m_AASamples = 2;
 				break;
 			case GLFW_KEY_2: m_AASamples = 4;
 				break;
@@ -419,7 +432,7 @@ void FishGL::key_callback(int key, int action)
 			case GLFW_KEY_4: m_AASamples = 16;
 				break;
 			case GLFW_KEY_5: m_AASamples = 32;
-				break;
+				break;*/
 		}
 	}
 }
@@ -835,6 +848,7 @@ void FishGL::i_renderScene(std::vector<sceneobj*>& scene, glm::mat4& m_view, boo
 
 				glUniform1i(glGetUniformLocation(shader->Program, "shadowSwitch"), m_shadowSwitch);
 				glUniform1f(glGetUniformLocation(shader->Program, "normalFactor"), m_normalFactor);
+				glUniform1i(glGetUniformLocation(shader->Program, "shadowMode"), m_shadowMode);
 			}
 
 			glUniform3f(glGetUniformLocation(shader->Program, "objColor"), scene[i]->color.r, scene[i]->color.g, scene[i]->color.b);

@@ -6,7 +6,7 @@
 #define LIGHT_WORLD_SIZE .5
 #define LIGHT_FRUSTUM_WIDTH 300 //3.75
 
-#define LIGHT_SIZE_UV 0.005//(LIGHT_WORLD_SIZE / LIGHT_FRUSTUM_WIDTH)
+#define LIGHT_SIZE_UV 0.002//(LIGHT_WORLD_SIZE / LIGHT_FRUSTUM_WIDTH)
 
 const vec2 poissonDisk[16] = vec2[](
 	vec2( -0.94201624, -0.39906216 ),
@@ -46,6 +46,7 @@ uniform float normalFactor;
 uniform sampler2D mainTexture;
 uniform sampler2D normalMap;
 uniform sampler2D depthMap;
+uniform int shadowMode;
 
 float PenumbraSize(float zReceiver, float zBlocker) //Parallel plane estimation
 {
@@ -116,13 +117,12 @@ float shadowCalc(vec4 fragPosLightSpace, vec3 norm)
 	if(projCoords.z > 1.0)
 		return 0.0;
 
-	bool pcss = true;
-	if(pcss)
+	if(shadowMode == 0)
 		return PCSS(projCoords);
-	else
-	{			
-		return PCF_Filter( projCoords.xy, projCoords.z, 0.001 );
-	}
+	else if(shadowMode == 1)
+		return PCF_Filter( projCoords.xy, projCoords.z, 0.002 );
+	else		
+		return (projCoords.z - 0.005 > texture(depthMap, projCoords.xy).r) ? 1.0 : 0.0;
 }
 
 void main()
